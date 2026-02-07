@@ -12,7 +12,6 @@ repository = "https://github.com/imazen/zenpnm"
 [dependencies]
 # Core (always available)
 enough = "0.3"
-whereat = "0.1"
 thiserror = { version = "2.0", default-features = false }
 
 [dev-dependencies]

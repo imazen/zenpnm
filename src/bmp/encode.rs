@@ -5,54 +5,7 @@ use crate::pixel::PixelLayout;
 use alloc::vec::Vec;
 use enough::Stop;
 
-/// BMP encoder (standalone, without the unified EncodeRequest).
-///
-/// For most uses, prefer [`crate::EncodeRequest::bmp`] or [`crate::EncodeRequest::bmp_with_alpha`].
-pub struct BmpEncoder {
-    include_alpha: bool,
-}
-
-impl BmpEncoder {
-    /// Create encoder that produces 24-bit RGB BMP.
-    pub fn new() -> Self {
-        Self {
-            include_alpha: false,
-        }
-    }
-
-    /// Include alpha channel (32-bit BMP).
-    pub fn with_alpha(self, alpha: bool) -> Self {
-        Self {
-            include_alpha: alpha,
-        }
-    }
-
-    /// Encode pixels to BMP bytes.
-    pub fn encode(
-        &self,
-        pixels: &[u8],
-        width: u32,
-        height: u32,
-        layout: PixelLayout,
-    ) -> Result<Vec<u8>, PnmError> {
-        encode_bmp(
-            pixels,
-            width,
-            height,
-            layout,
-            self.include_alpha,
-            &enough::Unstoppable,
-        )
-    }
-}
-
-impl Default for BmpEncoder {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Internal encode used by both BmpEncoder and EncodeRequest.
+/// Encode pixels to BMP format.
 pub(crate) fn encode_bmp(
     pixels: &[u8],
     width: u32,

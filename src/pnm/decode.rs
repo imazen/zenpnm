@@ -10,26 +10,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use enough::Stop;
 
-/// PNM decoder (standalone, without the unified DecodeRequest).
-///
-/// For most uses, prefer [`crate::DecodeRequest`] which auto-detects format.
-pub struct PnmDecoder<'a> {
-    data: &'a [u8],
-}
-
-impl<'a> PnmDecoder<'a> {
-    pub fn new(data: &'a [u8]) -> Self {
-        Self { data }
-    }
-
-    /// Probe: get dimensions and format without decoding pixels.
-    pub fn info(&self) -> Result<(u32, u32, PnmFormat, PixelLayout), PnmError> {
-        let header = parse_header(self.data)?;
-        Ok((header.width, header.height, header.format, header.layout))
-    }
-}
-
-/// Parse header from raw data. Public to crate for probe_header and decode.
+/// Parse header from raw data.
 pub(crate) fn parse_header(data: &[u8]) -> Result<PnmHeader, PnmError> {
     if data.len() < 3 {
         return Err(PnmError::UnexpectedEof);

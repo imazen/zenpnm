@@ -9,38 +9,7 @@ use alloc::format;
 use alloc::vec::Vec;
 use enough::Stop;
 
-/// PNM encoder (standalone, without the unified EncodeRequest).
-///
-/// For most uses, prefer [`crate::EncodeRequest::pnm`].
-pub struct PnmEncoder {
-    format: PnmFormat,
-}
-
-impl PnmEncoder {
-    pub fn new(format: PnmFormat) -> Self {
-        Self { format }
-    }
-
-    /// Encode pixels to PNM bytes.
-    pub fn encode(
-        &self,
-        pixels: &[u8],
-        width: u32,
-        height: u32,
-        layout: PixelLayout,
-    ) -> Result<Vec<u8>, PnmError> {
-        encode_pnm(
-            pixels,
-            width,
-            height,
-            layout,
-            self.format,
-            &enough::Unstoppable,
-        )
-    }
-}
-
-/// Internal encode used by both PnmEncoder and EncodeRequest.
+/// Encode pixels to PNM format.
 pub(crate) fn encode_pnm(
     pixels: &[u8],
     width: u32,

@@ -6,39 +6,19 @@
 mod decode;
 mod encode;
 
-pub use decode::PnmDecoder;
-pub use encode::PnmEncoder;
-
 use crate::decode::DecodeOutput;
 use crate::error::PnmError;
-use crate::info::{BitmapFormat, ImageInfo};
 use crate::limits::Limits;
 use crate::pixel::PixelLayout;
 use enough::Stop;
 
-/// Which PNM sub-format to use.
-#[non_exhaustive]
+/// Which PNM sub-format to use (internal).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PnmFormat {
-    /// P5 — binary grayscale (PGM).
+pub(crate) enum PnmFormat {
     Pgm,
-    /// P6 — binary RGB (PPM).
     Ppm,
-    /// P7 — PAM (arbitrary channels, with TUPLTYPE header).
     Pam,
-    /// PFM — floating-point (grayscale or RGB, 32-bit float).
     Pfm,
-}
-
-impl PnmFormat {
-    fn to_bitmap_format(self) -> BitmapFormat {
-        match self {
-            PnmFormat::Pgm => BitmapFormat::Pgm,
-            PnmFormat::Ppm => BitmapFormat::Ppm,
-            PnmFormat::Pam => BitmapFormat::Pam,
-            PnmFormat::Pfm => BitmapFormat::Pfm,
-        }
-    }
 }
 
 /// Parsed PNM header (internal).
@@ -53,23 +33,22 @@ pub(crate) struct PnmHeader {
     pub data_offset: usize,
 }
 
-/// Probe header for ImageInfo without decoding.
-pub(crate) fn probe_header(data: &[u8]) -> Result<ImageInfo, PnmError> {
-    let header = decode::parse_header(data)?;
-    Ok(ImageInfo {
-        width: header.width,
-        height: header.height,
-        format: header.format.to_bitmap_format(),
-        native_layout: header.layout,
-    })
-}
-
-/// Decode PNM data (called from DecodeRequest).
+/// Decode PNM data (called from top-level decode functions).
 pub(crate) fn decode<'a>(
     data: &'a [u8],
     limits: Option<&Limits>,
     stop: &dyn Stop,
 ) -> Result<DecodeOutput<'a>, PnmError> {
+    if data.len() < 3 {
+        return Err(PnmError::UnexpectedEof);
+    }
+
+    // Verify magic bytes
+    match &data[..2] {
+        b"P5" | b"P6" | b"P7" | b"Pf" | b"PF" => {}
+        _ => return Err(PnmError::UnrecognizedFormat),
+    }
+
     let header = decode::parse_header(data)?;
 
     if let Some(limits) = limits {
@@ -85,11 +64,9 @@ pub(crate) fn decode<'a>(
     let w = header.width as usize;
     let h = header.height as usize;
     let depth = header.depth as usize;
-    let bitmap_format = header.format.to_bitmap_format();
 
     match header.format {
         PnmFormat::Pfm => {
-            // PFM always needs transformation (endian swap + row flip)
             let out_bytes = w * h * depth * 4;
             if let Some(limits) = limits {
                 limits.check_memory(out_bytes)?;
@@ -100,7 +77,6 @@ pub(crate) fn decode<'a>(
                 header.width,
                 header.height,
                 header.layout,
-                bitmap_format,
             ))
         }
         _ => {
@@ -119,17 +95,14 @@ pub(crate) fn decode<'a>(
                 return Err(PnmError::UnexpectedEof);
             }
 
-            // Zero-copy path: 8-bit, maxval=255 — data is already in the right format
             if !is_16bit && header.maxval == 255 {
                 Ok(DecodeOutput::borrowed(
                     &pixel_data[..expected_src],
                     header.width,
                     header.height,
                     header.layout,
-                    bitmap_format,
                 ))
             } else {
-                // Needs transformation — allocate
                 let out_bytes = w * h * depth;
                 if let Some(limits) = limits {
                     limits.check_memory(out_bytes)?;
@@ -141,14 +114,13 @@ pub(crate) fn decode<'a>(
                     header.width,
                     header.height,
                     header.layout,
-                    bitmap_format,
                 ))
             }
         }
     }
 }
 
-/// Encode to PNM (called from EncodeRequest).
+/// Encode to PNM.
 pub(crate) fn encode(
     pixels: &[u8],
     width: u32,

@@ -18,7 +18,7 @@
 //!
 //! ### Basic BMP (`basic-bmp` feature, opt-in)
 //! - Uncompressed 24-bit (RGB) and 32-bit (RGBA) only
-//! - **Not auto-detected** — use [`bmp::decode_bmp`] and [`bmp::encode_bmp`] explicitly
+//! - **Not auto-detected** — use [`decode_bmp`] and [`encode_bmp`] explicitly
 //! - No RLE, no indexed color, no advanced headers
 //!
 //! ## Usage
@@ -29,7 +29,6 @@
 //!
 //! # #[cfg(feature = "pnm")]
 //! # {
-//! # use zenpnm::pnm::PnmFormat;
 //! // Encode pixels to PPM
 //! let pixels = vec![255u8, 0, 0, 0, 255, 0]; // 2 RGB pixels
 //! let encoded = encode_ppm(&pixels, 2, 1, PixelLayout::Rgb8, Unstoppable)?;
@@ -37,6 +36,7 @@
 //! // Decode (auto-detects PNM format, zero-copy when possible)
 //! let decoded = decode(&encoded, Unstoppable)?;
 //! assert!(decoded.is_borrowed()); // zero-copy for PPM with maxval=255
+//! assert_eq!(decoded.pixels(), &pixels[..]);
 //! # }
 //! # Ok::<(), zenpnm::PnmError>(())
 //! ```
@@ -51,48 +51,46 @@
 
 extern crate alloc;
 
+mod decode;
 mod error;
-mod info;
 mod limits;
 mod pixel;
 
 #[cfg(feature = "pnm")]
-pub mod pnm;
+mod pnm;
 
 #[cfg(feature = "basic-bmp")]
-pub mod bmp;
+mod bmp;
 
-mod decode;
-mod encode;
-
-// Re-exports
-pub use decode::{DecodeOutput, DecodeRequest};
-pub use encode::EncodeRequest;
+pub use decode::DecodeOutput;
 pub use enough::{Stop, Unstoppable};
 pub use error::PnmError;
-pub use info::{BitmapFormat, ImageInfo};
 pub use limits::Limits;
 pub use pixel::PixelLayout;
 
-// ── Flat one-shot functions (PNM only) ───────────────────────────────
+// ── PNM decode (auto-detects P5/P6/P7/PFM from magic bytes) ─────────
 
-/// Decode any supported PNM format (auto-detected from magic bytes).
+/// Decode any PNM format (auto-detected from magic bytes).
 ///
-/// Zero-copy when possible — the returned `DecodeOutput` borrows from `data`.
+/// Zero-copy when possible — the returned [`DecodeOutput`] borrows from `data`.
 ///
-/// This does **not** auto-detect BMP. For BMP, use [`bmp::decode_bmp`] explicitly.
+/// Does **not** auto-detect BMP. For BMP, use [`decode_bmp`] explicitly.
+#[cfg(feature = "pnm")]
 pub fn decode(data: &[u8], stop: impl Stop) -> Result<DecodeOutput<'_>, PnmError> {
-    DecodeRequest::new(data).decode(stop)
+    pnm::decode(data, None, &stop)
 }
 
-/// Decode PNM with resource limits.
+/// Decode any PNM format with resource limits.
+#[cfg(feature = "pnm")]
 pub fn decode_with_limits<'a>(
     data: &'a [u8],
     limits: &'a Limits,
     stop: impl Stop,
 ) -> Result<DecodeOutput<'a>, PnmError> {
-    DecodeRequest::new(data).with_limits(limits).decode(stop)
+    pnm::decode(data, Some(limits), &stop)
 }
+
+// ── PNM encode ───────────────────────────────────────────────────────
 
 /// Encode pixels as PPM (P6, binary RGB).
 #[cfg(feature = "pnm")]
@@ -140,4 +138,48 @@ pub fn encode_pfm(
     stop: impl Stop,
 ) -> Result<alloc::vec::Vec<u8>, PnmError> {
     pnm::encode(pixels, width, height, layout, pnm::PnmFormat::Pfm, &stop)
+}
+
+// ── BMP (explicit only, not auto-detected) ───────────────────────────
+
+/// Decode BMP data to pixels (explicit, not auto-detected).
+///
+/// BMP always allocates (BGR→RGB conversion + row flip).
+#[cfg(feature = "basic-bmp")]
+pub fn decode_bmp(data: &[u8], stop: impl Stop) -> Result<DecodeOutput<'_>, PnmError> {
+    bmp::decode(data, None, &stop)
+}
+
+/// Decode BMP with resource limits.
+#[cfg(feature = "basic-bmp")]
+pub fn decode_bmp_with_limits<'a>(
+    data: &'a [u8],
+    limits: &'a Limits,
+    stop: impl Stop,
+) -> Result<DecodeOutput<'a>, PnmError> {
+    bmp::decode(data, Some(limits), &stop)
+}
+
+/// Encode pixels as 24-bit BMP (RGB, no alpha).
+#[cfg(feature = "basic-bmp")]
+pub fn encode_bmp(
+    pixels: &[u8],
+    width: u32,
+    height: u32,
+    layout: PixelLayout,
+    stop: impl Stop,
+) -> Result<alloc::vec::Vec<u8>, PnmError> {
+    bmp::encode(pixels, width, height, layout, false, &stop)
+}
+
+/// Encode pixels as 32-bit BMP (RGBA with alpha).
+#[cfg(feature = "basic-bmp")]
+pub fn encode_bmp_rgba(
+    pixels: &[u8],
+    width: u32,
+    height: u32,
+    layout: PixelLayout,
+    stop: impl Stop,
+) -> Result<alloc::vec::Vec<u8>, PnmError> {
+    bmp::encode(pixels, width, height, layout, true, &stop)
 }

@@ -5,24 +5,6 @@ use crate::pixel::PixelLayout;
 use alloc::vec::Vec;
 use enough::Stop;
 
-/// BMP decoder (standalone, without the unified DecodeRequest).
-///
-/// For most uses, prefer [`crate::DecodeRequest`] which auto-detects format.
-pub struct BmpDecoder<'a> {
-    data: &'a [u8],
-}
-
-impl<'a> BmpDecoder<'a> {
-    pub fn new(data: &'a [u8]) -> Self {
-        Self { data }
-    }
-
-    /// Probe: get dimensions without full decode.
-    pub fn info(&self) -> Result<(u32, u32, PixelLayout), PnmError> {
-        parse_bmp_header(self.data)
-    }
-}
-
 /// Parse BMP header, returning (width, height, layout).
 pub(crate) fn parse_bmp_header(data: &[u8]) -> Result<(u32, u32, PixelLayout), PnmError> {
     if data.len() < 54 {
