@@ -43,8 +43,6 @@ impl ImageInfo {
         match &data[..2] {
             #[cfg(feature = "pnm")]
             b"P5" | b"P6" | b"P7" | b"Pf" | b"PF" => crate::pnm::probe_header(data),
-            #[cfg(feature = "bmp")]
-            b"BM" => crate::bmp::probe_header(data),
             _ => Err(PnmError::UnrecognizedFormat),
         }
     }

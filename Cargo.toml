@@ -4,7 +4,7 @@ version = "0.2.0"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT OR Apache-2.0"
-description = "PNM/PAM/PFM and BMP image format decoder and encoder (P5, P6, P7, PFM)"
+description = "PNM/PAM/PFM image format decoder and encoder (P5, P6, P7, PFM) with optional basic BMP"
 categories = ["multimedia::images"]
 keywords = ["image", "pnm", "pam", "ppm", "pgm"]
 repository = "https://github.com/imazen/zenpnm"
@@ -18,12 +18,12 @@ thiserror = { version = "2.0", default-features = false }
 [dev-dependencies]
 
 [features]
-default = ["pnm", "bmp"]
+default = ["pnm"]
 std = []
 
 # Format groups
-pnm = []   # P5 (PGM binary), P6 (PPM binary), P7 (PAM), PFM
-bmp = []   # BMP decode + encode
+pnm = []         # P5 (PGM binary), P6 (PPM binary), P7 (PAM), PFM
+basic-bmp = []   # Basic uncompressed 24/32-bit BMP (not auto-detected, explicit use only)
 
 # All formats
-all = ["pnm", "bmp"]
+all = ["pnm", "basic-bmp"]

@@ -99,9 +99,7 @@ fn flat_pfm_roundtrip_grayf32() {
     let encoded = encode_pfm(&pixels, 4, 3, PixelLayout::GrayF32, Unstoppable).unwrap();
     let decoded = decode(&encoded, Unstoppable).unwrap();
     assert_eq!(decoded.layout, PixelLayout::GrayF32);
-    // PFM roundtrip: data goes through bottom-to-top reorder
     assert_eq!(decoded.pixels().len(), pixels.len());
-    // Verify actual float values survive roundtrip
     let out_floats: Vec<f32> = decoded
         .pixels()
         .chunks_exact(4)
@@ -135,27 +133,26 @@ fn flat_pfm_roundtrip_rgbf32() {
     }
 }
 
-// ── BMP flat API roundtrips ──────────────────────────────────────────
+// ── BMP explicit API roundtrips ──────────────────────────────────────
 
 #[test]
 fn flat_bmp_roundtrip() {
     let pixels = checkerboard(10, 8, 3);
-    let encoded = encode_bmp(&pixels, 10, 8, PixelLayout::Rgb8, Unstoppable).unwrap();
+    let encoded = bmp::encode_bmp(&pixels, 10, 8, PixelLayout::Rgb8, Unstoppable).unwrap();
     assert_eq!(&encoded[0..2], b"BM");
-    let decoded = decode(&encoded, Unstoppable).unwrap();
+    let decoded = bmp::decode_bmp(&encoded, Unstoppable).unwrap();
     assert_eq!(decoded.width, 10);
     assert_eq!(decoded.height, 8);
     assert_eq!(decoded.layout, PixelLayout::Rgb8);
     assert_eq!(decoded.pixels(), &pixels[..]);
-    // BMP is never zero-copy (BGR→RGB, row flip)
     assert!(!decoded.is_borrowed());
 }
 
 #[test]
 fn flat_bmp_rgba_roundtrip() {
     let pixels = noise_pattern(7, 5, 4);
-    let encoded = encode_bmp_rgba(&pixels, 7, 5, PixelLayout::Rgba8, Unstoppable).unwrap();
-    let decoded = decode(&encoded, Unstoppable).unwrap();
+    let encoded = bmp::encode_bmp_rgba(&pixels, 7, 5, PixelLayout::Rgba8, Unstoppable).unwrap();
+    let decoded = bmp::decode_bmp(&encoded, Unstoppable).unwrap();
     assert_eq!(decoded.layout, PixelLayout::Rgba8);
     assert_eq!(decoded.pixels(), &pixels[..]);
 }
@@ -183,14 +180,13 @@ fn single_pixel_pgm() {
 #[test]
 fn single_pixel_bmp() {
     let pixels = vec![255, 0, 128];
-    let encoded = encode_bmp(&pixels, 1, 1, PixelLayout::Rgb8, Unstoppable).unwrap();
-    let decoded = decode(&encoded, Unstoppable).unwrap();
+    let encoded = bmp::encode_bmp(&pixels, 1, 1, PixelLayout::Rgb8, Unstoppable).unwrap();
+    let decoded = bmp::decode_bmp(&encoded, Unstoppable).unwrap();
     assert_eq!(decoded.pixels(), &[255, 0, 128]);
 }
 
 #[test]
 fn wide_image_ppm() {
-    // Test padding/alignment edge: wide but short
     let pixels = noise_pattern(1000, 1, 3);
     let encoded = encode_ppm(&pixels, 1000, 1, PixelLayout::Rgb8, Unstoppable).unwrap();
     let decoded = decode(&encoded, Unstoppable).unwrap();
@@ -209,26 +205,24 @@ fn tall_image_pgm() {
 
 #[test]
 fn bmp_odd_width_padding() {
-    // BMP rows must be 4-byte aligned. Width=3 with RGB = 9 bytes/row, padded to 12.
     let pixels = noise_pattern(3, 3, 3);
-    let encoded = encode_bmp(&pixels, 3, 3, PixelLayout::Rgb8, Unstoppable).unwrap();
-    let decoded = decode(&encoded, Unstoppable).unwrap();
+    let encoded = bmp::encode_bmp(&pixels, 3, 3, PixelLayout::Rgb8, Unstoppable).unwrap();
+    let decoded = bmp::decode_bmp(&encoded, Unstoppable).unwrap();
     assert_eq!(decoded.pixels(), &pixels[..]);
 }
 
 #[test]
 fn bmp_width_1_padding() {
-    // Width=1 RGB = 3 bytes/row, padded to 4
     let pixels = vec![10, 20, 30, 40, 50, 60];
-    let encoded = encode_bmp(&pixels, 1, 2, PixelLayout::Rgb8, Unstoppable).unwrap();
-    let decoded = decode(&encoded, Unstoppable).unwrap();
+    let encoded = bmp::encode_bmp(&pixels, 1, 2, PixelLayout::Rgb8, Unstoppable).unwrap();
+    let decoded = bmp::decode_bmp(&encoded, Unstoppable).unwrap();
     assert_eq!(decoded.pixels(), &pixels[..]);
 }
 
 // ── ImageInfo probing ────────────────────────────────────────────────
 
 #[test]
-fn probe_all_formats() {
+fn probe_pnm_formats() {
     // PPM
     let ppm = encode_ppm(&[0u8; 12], 2, 2, PixelLayout::Rgb8, Unstoppable).unwrap();
     let info = ImageInfo::from_bytes(&ppm).unwrap();
@@ -247,11 +241,19 @@ fn probe_all_formats() {
     let info = ImageInfo::from_bytes(&pam).unwrap();
     assert_eq!(info.format, BitmapFormat::Pam);
     assert_eq!(info.native_layout, PixelLayout::Rgba8);
+}
 
-    // BMP
-    let bmp = encode_bmp(&[0u8; 12], 2, 2, PixelLayout::Rgb8, Unstoppable).unwrap();
-    let info = ImageInfo::from_bytes(&bmp).unwrap();
+#[test]
+fn probe_bmp_explicit() {
+    // BMP is NOT auto-detected by ImageInfo::from_bytes
+    let bmp_data = bmp::encode_bmp(&[0u8; 12], 2, 2, PixelLayout::Rgb8, Unstoppable).unwrap();
+    assert!(ImageInfo::from_bytes(&bmp_data).is_err());
+
+    // Use bmp::probe explicitly
+    let info = bmp::probe(&bmp_data).unwrap();
     assert_eq!(info.format, BitmapFormat::Bmp);
+    assert_eq!(info.width, 2);
+    assert_eq!(info.height, 2);
 }
 
 // ── Limits enforcement ───────────────────────────────────────────────
@@ -278,28 +280,26 @@ fn limits_max_height() {
 }
 
 #[test]
-fn limits_max_memory() {
+fn limits_max_memory_bmp() {
     // BMP always allocates, so memory limit applies
-    let encoded = encode_bmp(&[0u8; 12], 2, 2, PixelLayout::Rgb8, Unstoppable).unwrap();
+    let encoded = bmp::encode_bmp(&[0u8; 12], 2, 2, PixelLayout::Rgb8, Unstoppable).unwrap();
     let limits = Limits {
         max_memory_bytes: Some(1),
         ..Default::default()
     };
-    assert!(decode_with_limits(&encoded, &limits, Unstoppable).is_err());
+    assert!(bmp::decode_bmp_with_limits(&encoded, Some(&limits), Unstoppable).is_err());
 }
 
-// ── Decode from real PNM files ───────────────────────────────────────
+// ── Decode from real files ───────────────────────────────────────────
 
 #[test]
 fn decode_external_ppm_if_available() {
-    // Try to decode a real PPM from the filesystem (non-fatal if missing)
     let path = "/home/lilith/work/libwebp/examples/test_ref.ppm";
     if let Ok(data) = std::fs::read(path) {
         let decoded = decode(&data, Unstoppable).unwrap();
         assert!(decoded.width > 0);
         assert!(decoded.height > 0);
         assert_eq!(decoded.format, BitmapFormat::Ppm);
-        // Re-encode and decode again
         let reencoded = encode_ppm(
             decoded.pixels(),
             decoded.width,
@@ -317,12 +317,11 @@ fn decode_external_ppm_if_available() {
 fn decode_external_bmp_if_available() {
     let path = "/home/lilith/work/salzweg/test-assets/sunflower.bmp";
     if let Ok(data) = std::fs::read(path) {
-        let decoded = decode(&data, Unstoppable).unwrap();
+        let decoded = bmp::decode_bmp(&data, Unstoppable).unwrap();
         assert!(decoded.width > 0);
         assert!(decoded.height > 0);
         assert_eq!(decoded.format, BitmapFormat::Bmp);
-        // Re-encode and roundtrip
-        let reencoded = encode_bmp(
+        let reencoded = bmp::encode_bmp(
             decoded.pixels(),
             decoded.width,
             decoded.height,
@@ -330,7 +329,7 @@ fn decode_external_bmp_if_available() {
             Unstoppable,
         )
         .unwrap();
-        let decoded2 = decode(&reencoded, Unstoppable).unwrap();
+        let decoded2 = bmp::decode_bmp(&reencoded, Unstoppable).unwrap();
         assert_eq!(decoded.pixels(), decoded2.pixels());
     }
 }

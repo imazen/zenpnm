@@ -8,7 +8,7 @@ use crate::pixel::PixelLayout;
 pub enum EncodeRequest {
     #[cfg(feature = "pnm")]
     Pnm(crate::pnm::PnmFormat),
-    #[cfg(feature = "bmp")]
+    #[cfg(feature = "basic-bmp")]
     Bmp {
         /// Include alpha channel (32-bit BMP). Otherwise 24-bit.
         alpha: bool,
@@ -23,13 +23,13 @@ impl EncodeRequest {
     }
 
     /// Encode to 24-bit BMP (RGB, no alpha).
-    #[cfg(feature = "bmp")]
+    #[cfg(feature = "basic-bmp")]
     pub fn bmp() -> Self {
         Self::Bmp { alpha: false }
     }
 
     /// Encode to 32-bit BMP (RGBA with alpha).
-    #[cfg(feature = "bmp")]
+    #[cfg(feature = "basic-bmp")]
     pub fn bmp_with_alpha() -> Self {
         Self::Bmp { alpha: true }
     }
@@ -46,7 +46,7 @@ impl EncodeRequest {
         match self {
             #[cfg(feature = "pnm")]
             Self::Pnm(format) => crate::pnm::encode(pixels, width, height, layout, *format, &stop),
-            #[cfg(feature = "bmp")]
+            #[cfg(feature = "basic-bmp")]
             Self::Bmp { alpha } => crate::bmp::encode(pixels, width, height, layout, *alpha, &stop),
         }
     }

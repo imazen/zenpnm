@@ -105,8 +105,6 @@ impl<'a> DecodeRequest<'a> {
             b"P5" | b"P6" | b"P7" | b"Pf" | b"PF" => {
                 crate::pnm::decode(self.data, self.limits, &stop)
             }
-            #[cfg(feature = "bmp")]
-            b"BM" => crate::bmp::decode(self.data, self.limits, &stop),
             _ => Err(PnmError::UnrecognizedFormat),
         }
     }
