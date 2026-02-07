@@ -109,6 +109,8 @@ jobs:
   test-wasm:
     name: Test WASM
     runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: "-C target-feature=+simd128"
     steps:
       - uses: actions/checkout@v6
 
@@ -195,3 +197,43 @@ jobs:
 
       - name: Check MSRV (all features)
         run: cargo check --all-features
+
+  # ==========================================================================
+  # Code coverage
+  # ==========================================================================
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - uses: Swatinem/rust-cache@v2
+      - name: Generate coverage
+        run: cargo llvm-cov --all-features --lcov --output-path lcov.info
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: lcov.info
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # ==========================================================================
+  # Fuzz smoke test
+  # ==========================================================================
+  fuzz:
+    name: Fuzz Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@nightly
+      - run: cargo install cargo-fuzz
+      - uses: Swatinem/rust-cache@v2
+      - run: |
+          for target in $(cargo fuzz list); do
+            cargo fuzz run "$target" -- -max_total_time=30
+          done
