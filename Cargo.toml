@@ -1,0 +1,29 @@
+[package]
+name = "zenpnm"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "AGPL-3.0-or-later"
+description = "PNM/PAM/PFM image format decoder and encoder (P5, P6, P7, PFM, BMP)"
+categories = ["multimedia::images"]
+keywords = ["image", "pnm", "pam", "ppm", "pgm"]
+repository = "https://github.com/imazen/zenpnm"
+
+[dependencies]
+# Core (always available)
+enough = "0.3"
+whereat = "0.1"
+thiserror = { version = "2.0", default-features = false }
+
+[dev-dependencies]
+
+[features]
+default = ["pnm", "bmp"]
+std = []
+
+# Format groups
+pnm = []   # P5 (PGM binary), P6 (PPM binary), P7 (PAM), PFM
+bmp = []   # BMP decode + encode
+
+# All formats
+all = ["pnm", "bmp"]
