@@ -87,3 +87,93 @@ pub use error::PnmError;
 pub use info::{BitmapFormat, ImageInfo};
 pub use limits::Limits;
 pub use pixel::PixelLayout;
+
+// ── Flat one-shot functions ──────────────────────────────────────────
+
+/// Decode any supported format (auto-detected from magic bytes).
+///
+/// Zero-copy when possible — the returned `DecodeOutput` borrows from `data`.
+pub fn decode(data: &[u8], stop: impl Stop) -> Result<DecodeOutput<'_>, PnmError> {
+    DecodeRequest::new(data).decode(stop)
+}
+
+/// Decode with resource limits.
+pub fn decode_with_limits<'a>(
+    data: &'a [u8],
+    limits: &'a Limits,
+    stop: impl Stop,
+) -> Result<DecodeOutput<'a>, PnmError> {
+    DecodeRequest::new(data).with_limits(limits).decode(stop)
+}
+
+/// Encode pixels as PPM (P6, binary RGB).
+#[cfg(feature = "pnm")]
+pub fn encode_ppm(
+    pixels: &[u8],
+    width: u32,
+    height: u32,
+    layout: PixelLayout,
+    stop: impl Stop,
+) -> Result<alloc::vec::Vec<u8>, PnmError> {
+    pnm::encode(pixels, width, height, layout, pnm::PnmFormat::Ppm, &stop)
+}
+
+/// Encode pixels as PGM (P5, binary grayscale).
+#[cfg(feature = "pnm")]
+pub fn encode_pgm(
+    pixels: &[u8],
+    width: u32,
+    height: u32,
+    layout: PixelLayout,
+    stop: impl Stop,
+) -> Result<alloc::vec::Vec<u8>, PnmError> {
+    pnm::encode(pixels, width, height, layout, pnm::PnmFormat::Pgm, &stop)
+}
+
+/// Encode pixels as PAM (P7, arbitrary channels).
+#[cfg(feature = "pnm")]
+pub fn encode_pam(
+    pixels: &[u8],
+    width: u32,
+    height: u32,
+    layout: PixelLayout,
+    stop: impl Stop,
+) -> Result<alloc::vec::Vec<u8>, PnmError> {
+    pnm::encode(pixels, width, height, layout, pnm::PnmFormat::Pam, &stop)
+}
+
+/// Encode pixels as PFM (floating-point).
+#[cfg(feature = "pnm")]
+pub fn encode_pfm(
+    pixels: &[u8],
+    width: u32,
+    height: u32,
+    layout: PixelLayout,
+    stop: impl Stop,
+) -> Result<alloc::vec::Vec<u8>, PnmError> {
+    pnm::encode(pixels, width, height, layout, pnm::PnmFormat::Pfm, &stop)
+}
+
+/// Encode pixels as 24-bit BMP (RGB, no alpha).
+#[cfg(feature = "bmp")]
+pub fn encode_bmp(
+    pixels: &[u8],
+    width: u32,
+    height: u32,
+    layout: PixelLayout,
+    stop: impl Stop,
+) -> Result<alloc::vec::Vec<u8>, PnmError> {
+    bmp::encode(pixels, width, height, layout, false, &stop)
+}
+
+/// Encode pixels as 32-bit BMP (RGBA with alpha).
+#[cfg(feature = "bmp")]
+pub fn encode_bmp_rgba(
+    pixels: &[u8],
+    width: u32,
+    height: u32,
+    layout: PixelLayout,
+    stop: impl Stop,
+) -> Result<alloc::vec::Vec<u8>, PnmError> {
+    bmp::encode(pixels, width, height, layout, true, &stop)
+}
