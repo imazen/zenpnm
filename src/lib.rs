@@ -481,7 +481,10 @@ where
     if decoded.width as usize != out_w || decoded.height as usize != out_h {
         return Err(PnmError::InvalidData(alloc::format!(
             "dimension mismatch: decoded {}x{}, output buffer {}x{}",
-            decoded.width, decoded.height, out_w, out_h
+            decoded.width,
+            decoded.height,
+            out_w,
+            out_h
         )));
     }
     let src_pixels: &[P] = decoded.pixels().as_pixels();

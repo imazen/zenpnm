@@ -5,7 +5,12 @@ use zenpnm::*;
 
 #[test]
 fn ppm_pixels_roundtrip() {
-    let pixels = vec![RGB8::new(255, 0, 0), RGB8::new(0, 255, 0), RGB8::new(0, 0, 255), RGB8::new(128, 128, 128)];
+    let pixels = vec![
+        RGB8::new(255, 0, 0),
+        RGB8::new(0, 255, 0),
+        RGB8::new(0, 0, 255),
+        RGB8::new(128, 128, 128),
+    ];
     let encoded = encode_ppm_pixels(&pixels, 2, 2, Unstoppable).unwrap();
     let (decoded, w, h) = decode_pixels::<RGB8>(&encoded, Unstoppable).unwrap();
     assert_eq!((w, h), (2, 2));
@@ -24,7 +29,12 @@ fn pam_rgba_pixels_roundtrip() {
 #[test]
 fn imgvec_roundtrip() {
     let img = imgref::ImgVec::new(
-        vec![RGB8::new(10, 20, 30), RGB8::new(40, 50, 60), RGB8::new(70, 80, 90), RGB8::new(100, 110, 120)],
+        vec![
+            RGB8::new(10, 20, 30),
+            RGB8::new(40, 50, 60),
+            RGB8::new(70, 80, 90),
+            RGB8::new(100, 110, 120),
+        ],
         2,
         2,
     );
@@ -67,9 +77,18 @@ fn decode_into_layout_mismatch() {
 fn strided_imgref_encode() {
     // Create a 4x3 image and take a 2x2 sub_image (which will have stride=4)
     let buf = vec![
-        RGB8::new(1, 2, 3), RGB8::new(4, 5, 6), RGB8::new(0, 0, 0), RGB8::new(0, 0, 0),
-        RGB8::new(7, 8, 9), RGB8::new(10, 11, 12), RGB8::new(0, 0, 0), RGB8::new(0, 0, 0),
-        RGB8::new(0, 0, 0), RGB8::new(0, 0, 0), RGB8::new(0, 0, 0), RGB8::new(0, 0, 0),
+        RGB8::new(1, 2, 3),
+        RGB8::new(4, 5, 6),
+        RGB8::new(0, 0, 0),
+        RGB8::new(0, 0, 0),
+        RGB8::new(7, 8, 9),
+        RGB8::new(10, 11, 12),
+        RGB8::new(0, 0, 0),
+        RGB8::new(0, 0, 0),
+        RGB8::new(0, 0, 0),
+        RGB8::new(0, 0, 0),
+        RGB8::new(0, 0, 0),
+        RGB8::new(0, 0, 0),
     ];
     let full = imgref::ImgVec::new(buf, 4, 3);
     let sub = full.as_ref().sub_image(0, 0, 2, 2);
@@ -77,15 +96,25 @@ fn strided_imgref_encode() {
     let encoded = encode_ppm_img(sub, Unstoppable).unwrap();
     let (decoded, w, h) = decode_pixels::<RGB8>(&encoded, Unstoppable).unwrap();
     assert_eq!((w, h), (2, 2));
-    assert_eq!(decoded, vec![
-        RGB8::new(1, 2, 3), RGB8::new(4, 5, 6),
-        RGB8::new(7, 8, 9), RGB8::new(10, 11, 12),
-    ]);
+    assert_eq!(
+        decoded,
+        vec![
+            RGB8::new(1, 2, 3),
+            RGB8::new(4, 5, 6),
+            RGB8::new(7, 8, 9),
+            RGB8::new(10, 11, 12),
+        ]
+    );
 }
 
 #[test]
 fn strided_decode_into() {
-    let pixels = vec![RGB8::new(1, 1, 1), RGB8::new(2, 2, 2), RGB8::new(3, 3, 3), RGB8::new(4, 4, 4)];
+    let pixels = vec![
+        RGB8::new(1, 1, 1),
+        RGB8::new(2, 2, 2),
+        RGB8::new(3, 3, 3),
+        RGB8::new(4, 4, 4),
+    ];
     let encoded = encode_ppm_pixels(&pixels, 2, 2, Unstoppable).unwrap();
 
     // Create a 4x3 buffer and decode into a 2x2 sub_image

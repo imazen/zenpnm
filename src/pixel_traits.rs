@@ -22,10 +22,14 @@ macro_rules! impl_pixel {
     ($ty:ty, $layout:expr) => {
         impl private::Sealed for $ty {}
         impl DecodePixel for $ty {
-            fn layout() -> PixelLayout { $layout }
+            fn layout() -> PixelLayout {
+                $layout
+            }
         }
         impl EncodePixel for $ty {
-            fn layout() -> PixelLayout { $layout }
+            fn layout() -> PixelLayout {
+                $layout
+            }
         }
     };
 }

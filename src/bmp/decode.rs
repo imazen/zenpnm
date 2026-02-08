@@ -74,12 +74,10 @@ pub(crate) fn decode_bmp_pixels(
     match layout {
         PixelLayout::Rgb8 => decode_24bit(pixel_data, w, h, top_down, stop),
         PixelLayout::Rgba8 => decode_32bit(pixel_data, w, h, top_down, stop),
-        _ => {
-            Err(PnmError::UnsupportedVariant(alloc::format!(
-                "BMP layout {:?} not supported in pixel decoder",
-                layout
-            )))
-        }
+        _ => Err(PnmError::UnsupportedVariant(alloc::format!(
+            "BMP layout {:?} not supported in pixel decoder",
+            layout
+        ))),
     }
 }
 
