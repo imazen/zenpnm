@@ -264,6 +264,38 @@ impl<'a> zencodec_types::DecodingJob<'a> for PnmDecodingJob<'a> {
         let pixels = layout_to_pixel_data(&decoded)?;
         Ok(DecodeOutput::new(pixels, info))
     }
+
+    fn decode_into_bgra8(
+        self,
+        data: &[u8],
+        mut dst: imgref::ImgRefMut<'_, rgb::alt::BGRA<u8>>,
+    ) -> Result<ImageInfo, PnmError> {
+        let output = self.decode(data)?;
+        let info = output.info().clone();
+        let src = output.into_bgra8();
+        for (src_row, dst_row) in src.as_ref().rows().zip(dst.rows_mut()) {
+            let n = src_row.len().min(dst_row.len());
+            dst_row[..n].copy_from_slice(&src_row[..n]);
+        }
+        Ok(info)
+    }
+
+    fn decode_into_bgrx8(
+        self,
+        data: &[u8],
+        mut dst: imgref::ImgRefMut<'_, rgb::alt::BGRA<u8>>,
+    ) -> Result<ImageInfo, PnmError> {
+        let output = self.decode(data)?;
+        let info = output.info().clone();
+        let src = output.into_bgra8();
+        for (src_row, dst_row) in src.as_ref().rows().zip(dst.rows_mut()) {
+            let n = src_row.len().min(dst_row.len());
+            for (s, d) in src_row[..n].iter().zip(dst_row[..n].iter_mut()) {
+                *d = rgb::alt::BGRA { b: s.b, g: s.g, r: s.r, a: 255 };
+            }
+        }
+        Ok(info)
+    }
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -536,6 +568,55 @@ mod tests {
 
         let result = dec.decode(output.bytes());
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn decode_into_bgra8_from_rgb() {
+        let pixels = vec![
+            rgb::Rgb { r: 255, g: 0, b: 0 },
+            rgb::Rgb { r: 0, g: 255, b: 0 },
+            rgb::Rgb { r: 0, g: 0, b: 255 },
+            rgb::Rgb { r: 128, g: 128, b: 128 },
+        ];
+        let img = imgref::ImgVec::new(pixels, 2, 2);
+        let enc = PnmEncoding::new();
+        let output = enc.encode_rgb8(img.as_ref()).unwrap();
+
+        let dec = PnmDecoding::new();
+        let mut buf = vec![rgb::alt::BGRA { b: 0, g: 0, r: 0, a: 0 }; 4];
+        let mut dst = imgref::ImgVec::new(buf.clone(), 2, 2);
+        let info = dec.decode_into_bgra8(output.bytes(), dst.as_mut()).unwrap();
+        assert_eq!(info.width, 2);
+        assert_eq!(info.height, 2);
+        buf = dst.into_buf();
+        assert_eq!(buf[0], rgb::alt::BGRA { b: 0, g: 0, r: 255, a: 255 });
+        assert_eq!(buf[1], rgb::alt::BGRA { b: 0, g: 255, r: 0, a: 255 });
+        assert_eq!(buf[2], rgb::alt::BGRA { b: 255, g: 0, r: 0, a: 255 });
+        assert_eq!(buf[3], rgb::alt::BGRA { b: 128, g: 128, r: 128, a: 255 });
+    }
+
+    #[test]
+    fn decode_into_bgrx8_forces_alpha_255() {
+        // Encode RGBA with non-255 alpha
+        let pixels = vec![
+            rgb::Rgba { r: 255, g: 0, b: 0, a: 100 },
+            rgb::Rgba { r: 0, g: 255, b: 0, a: 50 },
+            rgb::Rgba { r: 0, g: 0, b: 255, a: 0 },
+            rgb::Rgba { r: 128, g: 128, b: 128, a: 200 },
+        ];
+        let img = imgref::ImgVec::new(pixels, 2, 2);
+        let enc = PnmEncoding::new();
+        let output = enc.encode_rgba8(img.as_ref()).unwrap();
+
+        let dec = PnmDecoding::new();
+        let buf = vec![rgb::alt::BGRA { b: 0, g: 0, r: 0, a: 0 }; 4];
+        let mut dst = imgref::ImgVec::new(buf, 2, 2);
+        dec.decode_into_bgrx8(output.bytes(), dst.as_mut()).unwrap();
+        let result = dst.into_buf();
+        // All alpha bytes must be 255 regardless of source
+        for px in &result {
+            assert_eq!(px.a, 255);
+        }
     }
 
     #[test]
