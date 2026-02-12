@@ -265,6 +265,51 @@ impl<'a> zencodec_types::DecodingJob<'a> for PnmDecodingJob<'a> {
         Ok(DecodeOutput::new(pixels, info))
     }
 
+    fn decode_into_rgb8(
+        self,
+        data: &[u8],
+        mut dst: imgref::ImgRefMut<'_, rgb::Rgb<u8>>,
+    ) -> Result<ImageInfo, PnmError> {
+        let output = self.decode(data)?;
+        let info = output.info().clone();
+        let src = output.into_rgb8();
+        for (src_row, dst_row) in src.as_ref().rows().zip(dst.rows_mut()) {
+            let n = src_row.len().min(dst_row.len());
+            dst_row[..n].copy_from_slice(&src_row[..n]);
+        }
+        Ok(info)
+    }
+
+    fn decode_into_rgba8(
+        self,
+        data: &[u8],
+        mut dst: imgref::ImgRefMut<'_, rgb::Rgba<u8>>,
+    ) -> Result<ImageInfo, PnmError> {
+        let output = self.decode(data)?;
+        let info = output.info().clone();
+        let src = output.into_rgba8();
+        for (src_row, dst_row) in src.as_ref().rows().zip(dst.rows_mut()) {
+            let n = src_row.len().min(dst_row.len());
+            dst_row[..n].copy_from_slice(&src_row[..n]);
+        }
+        Ok(info)
+    }
+
+    fn decode_into_gray8(
+        self,
+        data: &[u8],
+        mut dst: imgref::ImgRefMut<'_, rgb::Gray<u8>>,
+    ) -> Result<ImageInfo, PnmError> {
+        let output = self.decode(data)?;
+        let info = output.info().clone();
+        let src = output.into_gray8();
+        for (src_row, dst_row) in src.as_ref().rows().zip(dst.rows_mut()) {
+            let n = src_row.len().min(dst_row.len());
+            dst_row[..n].copy_from_slice(&src_row[..n]);
+        }
+        Ok(info)
+    }
+
     fn decode_into_bgra8(
         self,
         data: &[u8],
