@@ -409,12 +409,30 @@ impl<'a> zencodec_types::DecodingJob<'a> for PnmDecodingJob<'a> {
         data: &[u8],
         mut dst: imgref::ImgRefMut<'_, rgb::Rgb<f32>>,
     ) -> Result<ImageInfo, PnmError> {
+        use linear_srgb::default::srgb_u8_to_linear;
+
         let output = self.decode(data)?;
         let info = output.info().clone();
-        let src = output.into_rgb_f32();
-        for (src_row, dst_row) in src.as_ref().rows().zip(dst.rows_mut()) {
-            let n = src_row.len().min(dst_row.len());
-            dst_row[..n].copy_from_slice(&src_row[..n]);
+        let is_float = matches!(output.pixels(), PixelData::RgbF32(_) | PixelData::RgbaF32(_) | PixelData::GrayF32(_));
+        if is_float {
+            // PFM is already linear — copy directly
+            let src = output.into_rgb_f32();
+            for (src_row, dst_row) in src.as_ref().rows().zip(dst.rows_mut()) {
+                let n = src_row.len().min(dst_row.len());
+                dst_row[..n].copy_from_slice(&src_row[..n]);
+            }
+        } else {
+            // Integer PNM: convert sRGB u8 → linear f32
+            let src = output.into_rgb8();
+            for (src_row, dst_row) in src.as_ref().rows().zip(dst.rows_mut()) {
+                for (s, d) in src_row.iter().zip(dst_row.iter_mut()) {
+                    *d = rgb::Rgb {
+                        r: srgb_u8_to_linear(s.r),
+                        g: srgb_u8_to_linear(s.g),
+                        b: srgb_u8_to_linear(s.b),
+                    };
+                }
+            }
         }
         Ok(info)
     }
@@ -424,12 +442,29 @@ impl<'a> zencodec_types::DecodingJob<'a> for PnmDecodingJob<'a> {
         data: &[u8],
         mut dst: imgref::ImgRefMut<'_, rgb::Rgba<f32>>,
     ) -> Result<ImageInfo, PnmError> {
+        use linear_srgb::default::srgb_u8_to_linear;
+
         let output = self.decode(data)?;
         let info = output.info().clone();
-        let src = output.into_rgba_f32();
-        for (src_row, dst_row) in src.as_ref().rows().zip(dst.rows_mut()) {
-            let n = src_row.len().min(dst_row.len());
-            dst_row[..n].copy_from_slice(&src_row[..n]);
+        let is_float = matches!(output.pixels(), PixelData::RgbF32(_) | PixelData::RgbaF32(_) | PixelData::GrayF32(_));
+        if is_float {
+            let src = output.into_rgba_f32();
+            for (src_row, dst_row) in src.as_ref().rows().zip(dst.rows_mut()) {
+                let n = src_row.len().min(dst_row.len());
+                dst_row[..n].copy_from_slice(&src_row[..n]);
+            }
+        } else {
+            let src = output.into_rgba8();
+            for (src_row, dst_row) in src.as_ref().rows().zip(dst.rows_mut()) {
+                for (s, d) in src_row.iter().zip(dst_row.iter_mut()) {
+                    *d = rgb::Rgba {
+                        r: srgb_u8_to_linear(s.r),
+                        g: srgb_u8_to_linear(s.g),
+                        b: srgb_u8_to_linear(s.b),
+                        a: s.a as f32 / 255.0,
+                    };
+                }
+            }
         }
         Ok(info)
     }
@@ -439,12 +474,24 @@ impl<'a> zencodec_types::DecodingJob<'a> for PnmDecodingJob<'a> {
         data: &[u8],
         mut dst: imgref::ImgRefMut<'_, rgb::Gray<f32>>,
     ) -> Result<ImageInfo, PnmError> {
+        use linear_srgb::default::srgb_u8_to_linear;
+
         let output = self.decode(data)?;
         let info = output.info().clone();
-        let src = output.into_gray_f32();
-        for (src_row, dst_row) in src.as_ref().rows().zip(dst.rows_mut()) {
-            let n = src_row.len().min(dst_row.len());
-            dst_row[..n].copy_from_slice(&src_row[..n]);
+        let is_float = matches!(output.pixels(), PixelData::RgbF32(_) | PixelData::RgbaF32(_) | PixelData::GrayF32(_));
+        if is_float {
+            let src = output.into_gray_f32();
+            for (src_row, dst_row) in src.as_ref().rows().zip(dst.rows_mut()) {
+                let n = src_row.len().min(dst_row.len());
+                dst_row[..n].copy_from_slice(&src_row[..n]);
+            }
+        } else {
+            let src = output.into_gray8();
+            for (src_row, dst_row) in src.as_ref().rows().zip(dst.rows_mut()) {
+                for (s, d) in src_row.iter().zip(dst_row.iter_mut()) {
+                    *d = rgb::Gray::new(srgb_u8_to_linear(s.value()));
+                }
+            }
         }
         Ok(info)
     }
@@ -843,7 +890,9 @@ mod tests {
 
     #[test]
     fn decode_into_rgb_f32_from_u8() {
-        // Encode as PPM (u8), then decode_into_rgb_f32 — verifies u8→f32 path
+        use linear_srgb::default::srgb_u8_to_linear;
+
+        // Encode as PPM (u8), then decode_into_rgb_f32 — verifies sRGB→linear path
         let pixels = vec![
             rgb::Rgb { r: 0u8, g: 128, b: 255 },
             rgb::Rgb { r: 255, g: 0, b: 128 },
@@ -859,8 +908,11 @@ mod tests {
         let mut dst = imgref::ImgVec::new(buf, 2, 2);
         dec.decode_into_rgb_f32(output.bytes(), dst.as_mut()).unwrap();
         let result = dst.into_buf();
+        // sRGB 0 → linear 0.0
         assert!((result[0].r - 0.0).abs() < 1e-6);
-        assert!((result[0].g - 128.0 / 255.0).abs() < 1e-3);
+        // sRGB 128 → linear (via srgb_u8_to_linear)
+        assert!((result[0].g - srgb_u8_to_linear(128)).abs() < 1e-5);
+        // sRGB 255 → linear 1.0
         assert!((result[0].b - 1.0).abs() < 1e-6);
     }
 
@@ -874,5 +926,37 @@ mod tests {
     fn decoding_clone_send_sync() {
         fn assert_traits<T: Clone + Send + Sync>() {}
         assert_traits::<PnmDecoding>();
+    }
+
+    #[test]
+    fn f32_conversion_all_simd_tiers() {
+        use archmage::testing::{for_each_token_permutation, CompileTimePolicy};
+        use linear_srgb::default::srgb_u8_to_linear;
+
+        let report = for_each_token_permutation(CompileTimePolicy::Warn, |_perm| {
+            // Encode as PPM (u8), decode to linear f32, verify values
+            let pixels = vec![
+                rgb::Rgb { r: 0u8, g: 128, b: 255 },
+                rgb::Rgb { r: 64, g: 192, b: 32 },
+                rgb::Rgb { r: 100, g: 100, b: 100 },
+                rgb::Rgb { r: 255, g: 0, b: 128 },
+            ];
+            let img = imgref::ImgVec::new(pixels.clone(), 2, 2);
+            let enc = PnmEncoding::new();
+            let output = enc.encode_rgb8(img.as_ref()).unwrap();
+
+            let dec = PnmDecoding::new();
+            let buf = vec![rgb::Rgb { r: 0.0f32, g: 0.0, b: 0.0 }; 4];
+            let mut dst = imgref::ImgVec::new(buf, 2, 2);
+            dec.decode_into_rgb_f32(output.bytes(), dst.as_mut()).unwrap();
+            let result = dst.into_buf();
+
+            for (orig, decoded) in pixels.iter().zip(result.iter()) {
+                assert!((decoded.r - srgb_u8_to_linear(orig.r)).abs() < 1e-5);
+                assert!((decoded.g - srgb_u8_to_linear(orig.g)).abs() < 1e-5);
+                assert!((decoded.b - srgb_u8_to_linear(orig.b)).abs() < 1e-5);
+            }
+        });
+        assert!(report.permutations_run >= 1);
     }
 }
