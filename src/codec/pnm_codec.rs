@@ -1,5 +1,5 @@
 use super::*;
-use whereat::{At, at};
+use whereat::At;
 
 use crate::alloc_util::AllocPref;
 use crate::pnm;
@@ -84,7 +84,7 @@ impl PnmEncoderConfig {
 }
 
 impl zencodec::encode::EncoderConfig for PnmEncoderConfig {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
     type Job = PnmEncodeJob;
 
     fn format() -> ImageFormat {
@@ -131,7 +131,7 @@ pub struct PnmEncodeJob {
 }
 
 impl zencodec::encode::EncodeJob for PnmEncodeJob {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
     type Enc = PnmEncoder;
     type AnimationFrameEnc = ();
 
@@ -149,7 +149,7 @@ impl zencodec::encode::EncodeJob for PnmEncodeJob {
         self
     }
 
-    fn encoder(self) -> crate::Result<PnmEncoder> {
+    fn encoder(self) -> Result<PnmEncoder, Self::Error> {
         Ok(PnmEncoder {
             config: self.config,
             limits: self.limits,
@@ -157,10 +157,8 @@ impl zencodec::encode::EncodeJob for PnmEncodeJob {
         })
     }
 
-    fn animation_frame_encoder(self) -> crate::Result<()> {
-        Err(at!(BitmapError::from(
-            zencodec::UnsupportedOperation::AnimationEncode,
-        )))
+    fn animation_frame_encoder(self) -> Result<(), Self::Error> {
+        Err(BitmapError::from(zencodec::UnsupportedOperation::AnimationEncode).into())
     }
 }
 
@@ -191,13 +189,13 @@ impl PnmEncoder {
 }
 
 impl zencodec::encode::Encoder for PnmEncoder {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
 
-    fn reject(op: zencodec::UnsupportedOperation) -> At<BitmapError> {
-        at!(BitmapError::from(op))
+    fn reject(op: zencodec::UnsupportedOperation) -> At<zencodec::CodecError> {
+        BitmapError::from(op).into()
     }
 
-    fn encode(self, pixels: PixelSlice<'_>) -> crate::Result<EncodeOutput> {
+    fn encode(self, pixels: PixelSlice<'_>) -> Result<EncodeOutput, Self::Error> {
         // Bit-exact load-bearing narrowing (dead alpha / chroma-free /
         // replicated-low-bits) before format mapping — see
         // `super::reduce_for_raw_encode`. PNM encodes grayscale, so every
@@ -216,7 +214,7 @@ impl zencodec::encode::Encoder for PnmEncoder {
         let h = pixels.rows();
 
         if let Some(limits) = self.effective_limits() {
-            limits.check(w, h)?;
+            limits.check(w, h).map_err(zencodec::CodecError::of)?;
         }
 
         match (desc.channel_type(), desc.layout()) {
@@ -229,7 +227,8 @@ impl zencodec::encode::Encoder for PnmEncoder {
                     crate::PixelLayout::Rgb8,
                     pnm::PnmFormat::Ppm,
                     stop,
-                )?;
+                )
+                .map_err(zencodec::CodecError::of)?;
                 Ok(EncodeOutput::new(encoded, ImageFormat::Pnm))
             }
             (ChannelType::U8, ChannelLayout::Rgba) => {
@@ -241,7 +240,8 @@ impl zencodec::encode::Encoder for PnmEncoder {
                     crate::PixelLayout::Rgba8,
                     pnm::PnmFormat::Pam,
                     stop,
-                )?;
+                )
+                .map_err(zencodec::CodecError::of)?;
                 Ok(EncodeOutput::new(encoded, ImageFormat::Pnm))
             }
             (ChannelType::U8, ChannelLayout::Gray) => {
@@ -253,7 +253,8 @@ impl zencodec::encode::Encoder for PnmEncoder {
                     crate::PixelLayout::Gray8,
                     pnm::PnmFormat::Pgm,
                     stop,
-                )?;
+                )
+                .map_err(zencodec::CodecError::of)?;
                 Ok(EncodeOutput::new(encoded, ImageFormat::Pnm))
             }
             (ChannelType::U8, ChannelLayout::Bgra) => {
@@ -265,7 +266,8 @@ impl zencodec::encode::Encoder for PnmEncoder {
                     crate::PixelLayout::Bgra8,
                     pnm::PnmFormat::Ppm,
                     stop,
-                )?;
+                )
+                .map_err(zencodec::CodecError::of)?;
                 Ok(EncodeOutput::new(encoded, ImageFormat::Pnm))
             }
             (ChannelType::F32, ChannelLayout::Rgb) => {
@@ -277,7 +279,8 @@ impl zencodec::encode::Encoder for PnmEncoder {
                     crate::PixelLayout::RgbF32,
                     pnm::PnmFormat::Pfm,
                     stop,
-                )?;
+                )
+                .map_err(zencodec::CodecError::of)?;
                 Ok(EncodeOutput::new(encoded, ImageFormat::Pnm))
             }
             (ChannelType::F32, ChannelLayout::Rgba) => {
@@ -297,7 +300,8 @@ impl zencodec::encode::Encoder for PnmEncoder {
                     crate::PixelLayout::RgbF32,
                     pnm::PnmFormat::Pfm,
                     stop,
-                )?;
+                )
+                .map_err(zencodec::CodecError::of)?;
                 Ok(EncodeOutput::new(encoded, ImageFormat::Pnm))
             }
             (ChannelType::F32, ChannelLayout::Gray) => {
@@ -309,13 +313,14 @@ impl zencodec::encode::Encoder for PnmEncoder {
                     crate::PixelLayout::GrayF32,
                     pnm::PnmFormat::Pfm,
                     stop,
-                )?;
+                )
+                .map_err(zencodec::CodecError::of)?;
                 Ok(EncodeOutput::new(encoded, ImageFormat::Pnm))
             }
-            _ => Err(at!(BitmapError::UnsupportedVariant(alloc::format!(
-                "unsupported pixel format: {:?}",
-                desc
-            )))),
+            // A well-formed request for a pixel format this encoder does not
+            // support — caller-request-origin, routed via the existing
+            // zencodec::UnsupportedOperation::PixelFormat axis.
+            _ => Err(Self::reject(zencodec::UnsupportedOperation::PixelFormat)),
         }
     }
 }
@@ -344,7 +349,7 @@ impl PnmDecoderConfig {
 }
 
 impl zencodec::decode::DecoderConfig for PnmDecoderConfig {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
     type Job<'a> = PnmDecodeJob;
 
     fn formats() -> &'static [ImageFormat] {
@@ -396,10 +401,10 @@ pub struct PnmDecodeJob {
 }
 
 impl<'a> zencodec::decode::DecodeJob<'a> for PnmDecodeJob {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
     type Dec = PnmDecoder<'a>;
-    type StreamDec = zencodec::Unsupported<At<BitmapError>>;
-    type AnimationFrameDec = zencodec::Unsupported<At<BitmapError>>;
+    type StreamDec = zencodec::Unsupported<At<zencodec::CodecError>>;
+    type AnimationFrameDec = zencodec::Unsupported<At<zencodec::CodecError>>;
 
     fn with_stop(mut self, stop: zencodec::StopToken) -> Self {
         self.stop = Some(stop);
@@ -418,13 +423,13 @@ impl<'a> zencodec::decode::DecodeJob<'a> for PnmDecodeJob {
         self
     }
 
-    fn probe(&self, data: &[u8]) -> crate::Result<ImageInfo> {
-        let header = pnm::decode::parse_header(data)?;
+    fn probe(&self, data: &[u8]) -> Result<ImageInfo, Self::Error> {
+        let header = pnm::decode::parse_header(data).map_err(zencodec::CodecError::of)?;
         Ok(header_to_image_info(&header))
     }
 
-    fn output_info(&self, data: &[u8]) -> crate::Result<OutputInfo> {
-        let header = pnm::decode::parse_header(data)?;
+    fn output_info(&self, data: &[u8]) -> Result<OutputInfo, Self::Error> {
+        let header = pnm::decode::parse_header(data).map_err(zencodec::CodecError::of)?;
         let has_alpha = matches!(
             header.layout,
             crate::PixelLayout::Rgba8 | crate::PixelLayout::Bgra8 | crate::PixelLayout::Rgba16
@@ -440,14 +445,15 @@ impl<'a> zencodec::decode::DecodeJob<'a> for PnmDecodeJob {
         self,
         data: Cow<'a, [u8]>,
         _preferred: &[PixelDescriptor],
-    ) -> crate::Result<PnmDecoder<'a>> {
+    ) -> Result<PnmDecoder<'a>, Self::Error> {
         if let Some(max) = self.max_input_bytes
             && data.len() as u64 > max
         {
-            return Err(at!(BitmapError::LimitExceeded(alloc::format!(
+            return Err(BitmapError::LimitExceeded(alloc::format!(
                 "input size {} exceeds limit {max}",
                 data.len()
-            ))));
+            ))
+            .into());
         }
         Ok(PnmDecoder {
             config: self.config,
@@ -465,7 +471,7 @@ impl<'a> zencodec::decode::DecodeJob<'a> for PnmDecodeJob {
         preferred: &[PixelDescriptor],
     ) -> Result<OutputInfo, Self::Error> {
         zencodec::helpers::copy_decode_to_sink(self, data, sink, preferred, |e| {
-            at!(BitmapError::InvalidData(e.to_string()))
+            BitmapError::InvalidData(e.to_string()).into()
         })
     }
 
@@ -473,20 +479,16 @@ impl<'a> zencodec::decode::DecodeJob<'a> for PnmDecodeJob {
         self,
         _data: Cow<'a, [u8]>,
         _preferred: &[PixelDescriptor],
-    ) -> crate::Result<zencodec::Unsupported<At<BitmapError>>> {
-        Err(at!(BitmapError::from(
-            zencodec::UnsupportedOperation::RowLevelDecode,
-        )))
+    ) -> Result<zencodec::Unsupported<At<zencodec::CodecError>>, Self::Error> {
+        Err(BitmapError::from(zencodec::UnsupportedOperation::RowLevelDecode).into())
     }
 
     fn animation_frame_decoder(
         self,
         _data: Cow<'a, [u8]>,
         _preferred: &[PixelDescriptor],
-    ) -> crate::Result<zencodec::Unsupported<At<BitmapError>>> {
-        Err(at!(BitmapError::from(
-            zencodec::UnsupportedOperation::AnimationDecode,
-        )))
+    ) -> Result<zencodec::Unsupported<At<zencodec::CodecError>>, Self::Error> {
+        Err(BitmapError::from(zencodec::UnsupportedOperation::AnimationDecode).into())
     }
 }
 
@@ -508,16 +510,16 @@ impl PnmDecoder<'_> {
 }
 
 impl zencodec::decode::Decode for PnmDecoder<'_> {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
 
-    fn decode(self) -> crate::Result<DecodeOutput> {
+    fn decode(self) -> Result<DecodeOutput, Self::Error> {
         let limits = self.effective_limits();
         let stop: &dyn Stop = match &self.stop {
             Some(s) => s,
             None => &enough::Unstoppable,
         };
-        let decoded =
-            crate::pnm::decode_with_alloc_pref(&self.data, limits, self.alloc_pref, stop)?;
-        decode_output_from_internal(&decoded, ImageFormat::Pnm)
+        let decoded = crate::pnm::decode_with_alloc_pref(&self.data, limits, self.alloc_pref, stop)
+            .map_err(zencodec::CodecError::of)?;
+        decode_output_from_internal(&decoded, ImageFormat::Pnm).map_err(zencodec::CodecError::of)
     }
 }

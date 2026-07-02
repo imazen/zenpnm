@@ -4,7 +4,7 @@ use alloc::vec::Vec;
 use enough::Stop;
 use whereat::at;
 
-use crate::error::BitmapError;
+use crate::error::{BitmapError, UnsupportedKind};
 use crate::pixel::PixelLayout;
 
 /// Encode pixel data as Radiance HDR (RGBE with new-style RLE).
@@ -92,9 +92,10 @@ pub(crate) fn encode_hdr(
                 }
             }
             _ => {
-                return Err(at!(BitmapError::UnsupportedVariant(alloc::format!(
-                    "cannot encode {layout:?} as HDR (supported: RgbF32, Rgb8)"
-                ))));
+                return Err(at!(BitmapError::UnsupportedVariant(
+                    UnsupportedKind::Feature,
+                    alloc::format!("cannot encode {layout:?} as HDR (supported: RgbF32, Rgb8)")
+                )));
             }
         }
 

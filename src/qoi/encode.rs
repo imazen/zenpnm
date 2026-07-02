@@ -5,7 +5,7 @@
 use alloc::vec::Vec;
 use enough::Stop;
 
-use crate::error::BitmapError;
+use crate::error::{BitmapError, UnsupportedKind};
 use crate::pixel::PixelLayout;
 use crate::qoi::rapid_qoi;
 
@@ -89,6 +89,7 @@ pub(crate) fn encode_qoi(
         }
         _ => {
             return Err(whereat::at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Feature,
                 alloc::format!(
                     "cannot encode {layout:?} as QOI (supported: Rgb8, Rgba8, Bgr8, Bgra8)"
                 )

@@ -15,7 +15,7 @@
 #   struct fields                               6
 #   enum variants                               4
 #   re-exports                                  4
-#   trait roster entries (type × trait)        89
+#   trait roster entries (type × trait)        91
 #   auto-trait-complete types                  14
 #   auto-trait exceptions                      24
 #
@@ -140,9 +140,9 @@ pub type BGRA8 = rgb::formats::bgra::Bgra<u8>
 pub type RGB8 = rgb::formats::rgb::Rgb<u8>
 pub type RGBA8 = rgb::formats::rgba::Rgba<u8>
 
-## trait impls (43 types)
+## trait impls (44 types)
 
-BitmapError: From<zencodec::capabilities::UnsupportedOperation>
+BitmapError: From<zencodec::capabilities::UnsupportedOperation>, zencodec::error::CategorizedError
 BmpDecodeJob: zencodec::traits::decoding::DecodeJob<'a>
 BmpDecoder<'_>: zencodec::traits::decoder::Decode
 BmpDecoderConfig: Clone, Debug, Default, zencodec::traits::decoding::DecoderConfig
@@ -185,6 +185,7 @@ rgb::formats::bgr::Bgr<u8>: DecodePixel, EncodePixel
 rgb::formats::bgra::Bgra<u8>: DecodePixel, EncodePixel
 rgb::formats::rgb::Rgb<u8>: DecodePixel, EncodePixel
 rgb::formats::rgba::Rgba<u8>: DecodePixel, EncodePixel
+whereat::at::At<zencodec::error::CodecError>: From<BitmapError>
 
 ## auto traits
 

@@ -42,7 +42,7 @@ pub(crate) fn decode_with_alloc_pref<'a>(
         .checked_mul(height as usize)
         .and_then(|px| px.checked_mul(12)) // 3 channels × 4 bytes per f32
         .ok_or_else(|| {
-            at!(BitmapError::LimitExceeded(
+            at!(BitmapError::OutOfMemory(
                 "output size overflows usize".into()
             ))
         })?;

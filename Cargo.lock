@@ -846,6 +846,7 @@ dependencies = [
  "whereat",
  "zenbench",
  "zencodec",
+ "zencodec-testkit",
  "zenpixels",
  "zenpixels-convert",
  "zenutils-fuzz",
@@ -854,12 +855,22 @@ dependencies = [
 [[package]]
 name = "zencodec"
 version = "0.1.25"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f9328427935f563e3cc12aaab76ad4afe946d1a60611a74047184682afc20ed"
+source = "git+https://github.com/imazen/zencodec?rev=2427387f86c77fdf773ae2fa219926a49cd32d99#2427387f86c77fdf773ae2fa219926a49cd32d99"
 dependencies = [
  "almost-enough",
  "enough",
  "whereat",
+ "zenpixels",
+]
+
+[[package]]
+name = "zencodec-testkit"
+version = "0.1.0"
+source = "git+https://github.com/imazen/zencodec?rev=2427387f86c77fdf773ae2fa219926a49cd32d99#2427387f86c77fdf773ae2fa219926a49cd32d99"
+dependencies = [
+ "enough",
+ "whereat",
+ "zencodec",
  "zenpixels",
 ]
 

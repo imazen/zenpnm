@@ -1,5 +1,5 @@
 use super::*;
-use whereat::{At, ResultAtExt, at};
+use whereat::At;
 
 use crate::alloc_util::AllocPref;
 
@@ -58,7 +58,7 @@ impl HdrEncoderConfig {
 }
 
 impl zencodec::encode::EncoderConfig for HdrEncoderConfig {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
     type Job = HdrEncodeJob;
 
     fn format() -> ImageFormat {
@@ -106,7 +106,7 @@ pub struct HdrEncodeJob {
 }
 
 impl zencodec::encode::EncodeJob for HdrEncodeJob {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
     type Enc = HdrEncoder;
     type AnimationFrameEnc = ();
 
@@ -124,7 +124,7 @@ impl zencodec::encode::EncodeJob for HdrEncodeJob {
         self
     }
 
-    fn encoder(self) -> crate::Result<HdrEncoder> {
+    fn encoder(self) -> Result<HdrEncoder, Self::Error> {
         Ok(HdrEncoder {
             config: self.config,
             limits: self.limits,
@@ -133,10 +133,8 @@ impl zencodec::encode::EncodeJob for HdrEncodeJob {
         })
     }
 
-    fn animation_frame_encoder(self) -> crate::Result<()> {
-        Err(at!(BitmapError::from(
-            zencodec::UnsupportedOperation::AnimationEncode,
-        )))
+    fn animation_frame_encoder(self) -> Result<(), Self::Error> {
+        Err(BitmapError::from(zencodec::UnsupportedOperation::AnimationEncode).into())
     }
 }
 
@@ -175,28 +173,31 @@ impl HdrEncoder {
     }
 }
 
-fn pixel_slice_to_hdr_layout(desc: PixelDescriptor) -> crate::Result<crate::PixelLayout> {
+fn pixel_slice_to_hdr_layout(
+    desc: PixelDescriptor,
+) -> Result<crate::PixelLayout, At<zencodec::CodecError>> {
     match (desc.channel_type(), desc.layout()) {
         (ChannelType::F32, ChannelLayout::Rgb) => Ok(crate::PixelLayout::RgbF32),
         (ChannelType::U8, ChannelLayout::Rgb) => Ok(crate::PixelLayout::Rgb8),
-        _ => Err(at!(BitmapError::UnsupportedVariant(alloc::format!(
-            "HDR encode: unsupported pixel format: {desc:?}"
-        )))),
+        // A well-formed request for a pixel format this encoder does not
+        // support — caller-request-origin, routed via the existing
+        // zencodec::UnsupportedOperation::PixelFormat axis.
+        _ => Err(BitmapError::from(zencodec::UnsupportedOperation::PixelFormat).into()),
     }
 }
 
 impl zencodec::encode::Encoder for HdrEncoder {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
 
-    fn reject(op: zencodec::UnsupportedOperation) -> At<BitmapError> {
-        at!(BitmapError::from(op))
+    fn reject(op: zencodec::UnsupportedOperation) -> At<zencodec::CodecError> {
+        BitmapError::from(op).into()
     }
 
     fn preferred_strip_height(&self) -> u32 {
         1
     }
 
-    fn encode(self, pixels: PixelSlice<'_>) -> crate::Result<EncodeOutput> {
+    fn encode(self, pixels: PixelSlice<'_>) -> Result<EncodeOutput, Self::Error> {
         let stop: &dyn Stop = match &self.stop {
             Some(s) => s,
             None => &enough::Unstoppable,
@@ -205,16 +206,17 @@ impl zencodec::encode::Encoder for HdrEncoder {
         let h = pixels.rows();
 
         if let Some(limits) = self.effective_limits() {
-            limits.check(w, h)?;
+            limits.check(w, h).map_err(zencodec::CodecError::of)?;
         }
 
         let layout = pixel_slice_to_hdr_layout(pixels.descriptor())?;
         let bytes = pixels.contiguous_bytes();
-        let encoded = crate::hdr::encode(&bytes, w, h, layout, stop)?;
+        let encoded =
+            crate::hdr::encode(&bytes, w, h, layout, stop).map_err(zencodec::CodecError::of)?;
         Ok(EncodeOutput::new(encoded, ImageFormat::Hdr))
     }
 
-    fn push_rows(&mut self, rows: PixelSlice<'_>) -> crate::Result<()> {
+    fn push_rows(&mut self, rows: PixelSlice<'_>) -> Result<(), Self::Error> {
         let layout = pixel_slice_to_hdr_layout(rows.descriptor())?;
 
         let acc = self
@@ -227,9 +229,10 @@ impl zencodec::encode::Encoder for HdrEncoder {
             });
 
         if acc.width != rows.width() || acc.layout != layout {
-            return Err(at!(BitmapError::InvalidData(
+            return Err(BitmapError::InvalidData(
                 "push_rows: width or pixel format changed".into(),
-            )));
+            )
+            .into());
         }
 
         let bytes = rows.contiguous_bytes();
@@ -238,10 +241,10 @@ impl zencodec::encode::Encoder for HdrEncoder {
         Ok(())
     }
 
-    fn finish(self) -> crate::Result<EncodeOutput> {
+    fn finish(self) -> Result<EncodeOutput, Self::Error> {
         let acc = self.accumulator.ok_or_else(|| {
-            at!(BitmapError::InvalidData(
-                "finish() without push_rows()".into()
+            At::<zencodec::CodecError>::from(BitmapError::InvalidData(
+                "finish() without push_rows()".into(),
             ))
         })?;
 
@@ -250,7 +253,8 @@ impl zencodec::encode::Encoder for HdrEncoder {
             None => &enough::Unstoppable,
         };
 
-        let encoded = crate::hdr::encode(&acc.data, acc.width, acc.total_rows, acc.layout, stop)?;
+        let encoded = crate::hdr::encode(&acc.data, acc.width, acc.total_rows, acc.layout, stop)
+            .map_err(zencodec::CodecError::of)?;
         Ok(EncodeOutput::new(encoded, ImageFormat::Hdr))
     }
 }
@@ -277,7 +281,7 @@ impl HdrDecoderConfig {
 }
 
 impl zencodec::decode::DecoderConfig for HdrDecoderConfig {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
     type Job<'a> = HdrDecodeJob;
 
     fn formats() -> &'static [ImageFormat] {
@@ -328,10 +332,10 @@ pub struct HdrDecodeJob {
 }
 
 impl<'a> zencodec::decode::DecodeJob<'a> for HdrDecodeJob {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
     type Dec = HdrDecoder<'a>;
     type StreamDec = HdrStreamingDecoder;
-    type AnimationFrameDec = zencodec::Unsupported<At<BitmapError>>;
+    type AnimationFrameDec = zencodec::Unsupported<At<zencodec::CodecError>>;
 
     fn with_stop(mut self, stop: zencodec::StopToken) -> Self {
         self.stop = Some(stop);
@@ -350,8 +354,9 @@ impl<'a> zencodec::decode::DecodeJob<'a> for HdrDecodeJob {
         self
     }
 
-    fn probe(&self, data: &[u8]) -> crate::Result<ImageInfo> {
-        let (width, height, _offset) = crate::hdr::decode::parse_header(data)?;
+    fn probe(&self, data: &[u8]) -> Result<ImageInfo, Self::Error> {
+        let (width, height, _offset) =
+            crate::hdr::decode::parse_header(data).map_err(zencodec::CodecError::of)?;
         let cicp = zencodec::Cicp::new(1, 8, 0, true);
         Ok(ImageInfo::new(width, height, ImageFormat::Hdr)
             .with_alpha(false)
@@ -361,8 +366,9 @@ impl<'a> zencodec::decode::DecodeJob<'a> for HdrDecodeJob {
             .with_source_encoding_details(BitmapSourceEncoding))
     }
 
-    fn output_info(&self, data: &[u8]) -> crate::Result<OutputInfo> {
-        let (width, height, _offset) = crate::hdr::decode::parse_header(data)?;
+    fn output_info(&self, data: &[u8]) -> Result<OutputInfo, Self::Error> {
+        let (width, height, _offset) =
+            crate::hdr::decode::parse_header(data).map_err(zencodec::CodecError::of)?;
         Ok(
             OutputInfo::full_decode(width, height, PixelDescriptor::RGBF32_LINEAR)
                 .with_alpha(false),
@@ -373,14 +379,15 @@ impl<'a> zencodec::decode::DecodeJob<'a> for HdrDecodeJob {
         self,
         data: Cow<'a, [u8]>,
         _preferred: &[PixelDescriptor],
-    ) -> crate::Result<HdrDecoder<'a>> {
+    ) -> Result<HdrDecoder<'a>, Self::Error> {
         if let Some(max) = self.max_input_bytes
             && data.len() as u64 > max
         {
-            return Err(at!(BitmapError::LimitExceeded(alloc::format!(
+            return Err(BitmapError::LimitExceeded(alloc::format!(
                 "input size {} exceeds limit {max}",
                 data.len()
-            ))));
+            ))
+            .into());
         }
         Ok(HdrDecoder {
             config: self.config,
@@ -398,7 +405,7 @@ impl<'a> zencodec::decode::DecodeJob<'a> for HdrDecodeJob {
         preferred: &[PixelDescriptor],
     ) -> Result<OutputInfo, Self::Error> {
         zencodec::helpers::copy_decode_to_sink(self, data, sink, preferred, |e| {
-            at!(BitmapError::InvalidData(e.to_string()))
+            BitmapError::InvalidData(e.to_string()).into()
         })
     }
 
@@ -406,31 +413,34 @@ impl<'a> zencodec::decode::DecodeJob<'a> for HdrDecodeJob {
         self,
         data: Cow<'a, [u8]>,
         _preferred: &[PixelDescriptor],
-    ) -> crate::Result<HdrStreamingDecoder> {
+    ) -> Result<HdrStreamingDecoder, Self::Error> {
         if let Some(max) = self.max_input_bytes
             && data.len() as u64 > max
         {
-            return Err(at!(BitmapError::LimitExceeded(alloc::format!(
+            return Err(BitmapError::LimitExceeded(alloc::format!(
                 "input size {} exceeds limit {max}",
                 data.len()
-            ))));
+            ))
+            .into());
         }
-        let (width, height, _offset) = crate::hdr::decode::parse_header(&data)?;
+        let (width, height, _offset) =
+            crate::hdr::decode::parse_header(&data).map_err(zencodec::CodecError::of)?;
 
         let limits = self.limits.or(self.config.limits);
         if let Some(ref lim) = limits {
-            lim.check(width, height)?;
+            lim.check(width, height).map_err(zencodec::CodecError::of)?;
         }
 
-        let row_bytes = (width as usize)
-            .checked_mul(12)
-            .ok_or_else(|| at!(BitmapError::DimensionsTooLarge { width, height }))?;
+        let row_bytes = (width as usize).checked_mul(12).ok_or_else(|| {
+            At::<zencodec::CodecError>::from(BitmapError::DimensionsTooLarge { width, height })
+        })?;
 
-        let total_bytes = row_bytes
-            .checked_mul(height as usize)
-            .ok_or_else(|| at!(BitmapError::DimensionsTooLarge { width, height }))?;
+        let total_bytes = row_bytes.checked_mul(height as usize).ok_or_else(|| {
+            At::<zencodec::CodecError>::from(BitmapError::DimensionsTooLarge { width, height })
+        })?;
 
-        crate::limits::check_output_size(total_bytes, limits.as_ref())?;
+        crate::limits::check_output_size(total_bytes, limits.as_ref())
+            .map_err(zencodec::CodecError::of)?;
 
         let cicp = zencodec::Cicp::new(1, 8, 0, true);
         let info = ImageInfo::new(width, height, ImageFormat::Hdr)
@@ -445,7 +455,8 @@ impl<'a> zencodec::decode::DecodeJob<'a> for HdrDecodeJob {
             None => &enough::Unstoppable,
         };
         let decoded =
-            crate::hdr::decode_with_alloc_pref(&data, limits.as_ref(), self.alloc_pref, stop)?;
+            crate::hdr::decode_with_alloc_pref(&data, limits.as_ref(), self.alloc_pref, stop)
+                .map_err(zencodec::CodecError::of)?;
         let pixels_owned: Vec<u8> = decoded.pixels().to_vec();
 
         Ok(HdrStreamingDecoder {
@@ -462,10 +473,8 @@ impl<'a> zencodec::decode::DecodeJob<'a> for HdrDecodeJob {
         self,
         _data: Cow<'a, [u8]>,
         _preferred: &[PixelDescriptor],
-    ) -> crate::Result<zencodec::Unsupported<At<BitmapError>>> {
-        Err(at!(BitmapError::from(
-            zencodec::UnsupportedOperation::AnimationDecode,
-        )))
+    ) -> Result<zencodec::Unsupported<At<zencodec::CodecError>>, Self::Error> {
+        Err(BitmapError::from(zencodec::UnsupportedOperation::AnimationDecode).into())
     }
 }
 
@@ -487,17 +496,17 @@ impl HdrDecoder<'_> {
 }
 
 impl zencodec::decode::Decode for HdrDecoder<'_> {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
 
-    fn decode(self) -> crate::Result<DecodeOutput> {
+    fn decode(self) -> Result<DecodeOutput, Self::Error> {
         let limits = self.effective_limits();
         let stop: &dyn Stop = match &self.stop {
             Some(s) => s,
             None => &enough::Unstoppable,
         };
-        let decoded =
-            crate::hdr::decode_with_alloc_pref(&self.data, limits, self.alloc_pref, stop)?;
-        decode_output_from_internal(&decoded, ImageFormat::Hdr)
+        let decoded = crate::hdr::decode_with_alloc_pref(&self.data, limits, self.alloc_pref, stop)
+            .map_err(zencodec::CodecError::of)?;
+        decode_output_from_internal(&decoded, ImageFormat::Hdr).map_err(zencodec::CodecError::of)
     }
 }
 
@@ -514,9 +523,9 @@ pub struct HdrStreamingDecoder {
 }
 
 impl zencodec::decode::StreamingDecode for HdrStreamingDecoder {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
 
-    fn next_batch(&mut self) -> crate::Result<Option<(u32, PixelSlice<'_>)>> {
+    fn next_batch(&mut self) -> Result<Option<(u32, PixelSlice<'_>)>, Self::Error> {
         if self.current_row >= self.height {
             return Ok(None);
         }
@@ -532,7 +541,9 @@ impl zencodec::decode::StreamingDecode for HdrStreamingDecoder {
             self.row_bytes,
             PixelDescriptor::RGBF32_LINEAR,
         )
-        .map_err_at(|inner| BitmapError::InvalidData(inner.to_string()))?;
+        .map_err(|inner| {
+            At::<zencodec::CodecError>::from(BitmapError::InvalidData(inner.to_string()))
+        })?;
 
         self.current_row += 1;
         Ok(Some((y, slice)))

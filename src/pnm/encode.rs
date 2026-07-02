@@ -3,7 +3,7 @@
 //! Credits: Draws from zune-ppm by Caleb Etemesi (MIT/Apache-2.0/Zlib).
 
 use super::PnmFormat;
-use crate::error::BitmapError;
+use crate::error::{BitmapError, UnsupportedKind};
 use crate::pixel::PixelLayout;
 use alloc::format;
 use alloc::vec::Vec;
@@ -36,6 +36,7 @@ pub(crate) fn encode_pnm(
 
     match fmt {
         PnmFormat::Pbm => Err(whereat::at!(BitmapError::UnsupportedVariant(
+            UnsupportedKind::Type,
             "PBM encode not supported, use PGM (encode_pgm)".into(),
         ))),
         PnmFormat::Pgm => encode_pgm(pixels, width, height, w, h, layout, stop),
@@ -115,10 +116,10 @@ fn encode_pgm(
             }
         }
         _ => {
-            return Err(whereat::at!(BitmapError::UnsupportedVariant(format!(
-                "cannot encode {:?} as PGM",
-                layout
-            ))));
+            return Err(whereat::at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Feature,
+                format!("cannot encode {:?} as PGM", layout)
+            )));
         }
     }
 
@@ -186,10 +187,10 @@ fn encode_ppm(
             }
         }
         _ => {
-            return Err(whereat::at!(BitmapError::UnsupportedVariant(format!(
-                "cannot encode {:?} as PPM",
-                layout
-            ))));
+            return Err(whereat::at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Feature,
+                format!("cannot encode {:?} as PPM", layout)
+            )));
         }
     }
 
@@ -214,10 +215,10 @@ fn encode_pam(
         PixelLayout::Bgra8 => (4, "RGB_ALPHA", 255),
         PixelLayout::Bgrx8 => (4, "RGB_ALPHA", 255),
         _ => {
-            return Err(whereat::at!(BitmapError::UnsupportedVariant(format!(
-                "cannot encode {:?} as PAM",
-                layout
-            ))));
+            return Err(whereat::at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Feature,
+                format!("cannot encode {:?} as PAM", layout)
+            )));
         }
     };
 
@@ -313,10 +314,10 @@ fn encode_pfm(
         PixelLayout::GrayF32 => ("Pf", 1),
         PixelLayout::RgbF32 => ("PF", 3),
         _ => {
-            return Err(whereat::at!(BitmapError::UnsupportedVariant(format!(
-                "PFM requires GrayF32 or RgbF32, got {:?}",
-                layout
-            ))));
+            return Err(whereat::at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Feature,
+                format!("PFM requires GrayF32 or RgbF32, got {:?}", layout)
+            )));
         }
     };
 

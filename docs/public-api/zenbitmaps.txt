@@ -6,24 +6,24 @@
 # impls omitted; re-export duplicates annotated `[also: path]`.
 # DO NOT EDIT BY HAND — commit regenerated changes with the code.
 #
-# files: zenbitmaps.txt 71 lines (supported surface) | zenbitmaps.features.txt 183 added (features: all,bmp,hdr,imgref,qoi,rgb,simd,std,tga,zencodec) | zenbitmaps.internal.txt 6 lines (6 hidden + 0 excluded-feature)
+# files: zenbitmaps.txt 77 lines (supported surface) | zenbitmaps.features.txt 184 added (features: all,bmp,hdr,imgref,qoi,rgb,simd,std,tga,zencodec) | zenbitmaps.internal.txt 8 lines (8 hidden + 0 excluded-feature)
 
 ## summary
 #
 #   pub modules                                 1
-#   pub types (struct/enum/trait/alias)         6
+#   pub types (struct/enum/trait/alias)         7
 #   free functions                             10
 #   inherent methods                            6
 #   struct fields                              13
-#   enum variants                              26
+#   enum variants                              30
 #   re-exports                                  3
-#   trait roster entries (type × trait)        22
-#   auto-trait-complete types                   5
+#   trait roster entries (type × trait)        27
+#   auto-trait-complete types                   6
 #
 # per-module pub lines:
-#   (root)                           65
+#   (root)                           70
 
-## items (65 lines)
+## items (70 lines)
 
 pub mod zenbitmaps
 pub use At
@@ -34,6 +34,7 @@ pub BitmapError::BufferTooSmall
 pub BitmapError::BufferTooSmall::actual: usize
 pub BitmapError::BufferTooSmall::needed: usize
 pub BitmapError::Cancelled(enough::reason::StopReason)
+pub BitmapError::DecompressionBomb(alloc::string::String)
 pub BitmapError::DimensionsTooLarge
 pub BitmapError::DimensionsTooLarge::height: u32
 pub BitmapError::DimensionsTooLarge::width: u32
@@ -43,9 +44,10 @@ pub BitmapError::LayoutMismatch
 pub BitmapError::LayoutMismatch::actual: PixelLayout
 pub BitmapError::LayoutMismatch::expected: PixelLayout
 pub BitmapError::LimitExceeded(alloc::string::String)
+pub BitmapError::OutOfMemory(alloc::string::String)
 pub BitmapError::UnexpectedEof
 pub BitmapError::UnrecognizedFormat
-pub BitmapError::UnsupportedVariant(alloc::string::String)
+pub BitmapError::UnsupportedVariant(UnsupportedKind, alloc::string::String)
 #[non_exhaustive] pub enum ImageFormat
 pub ImageFormat::Bmp
 pub ImageFormat::Farbfeld
@@ -67,6 +69,9 @@ pub PixelLayout::Rgba8
 pub fn PixelLayout::bytes_per_pixel(&self) -> usize
 pub fn PixelLayout::channels(&self) -> usize
 pub fn PixelLayout::is_memory_compatible(&self, PixelLayout) -> bool
+#[non_exhaustive] pub enum UnsupportedKind
+pub UnsupportedKind::Feature
+pub UnsupportedKind::Type
 pub struct DecodeOutput<'a>
 pub DecodeOutput::height: u32
 pub DecodeOutput::layout: PixelLayout
@@ -91,14 +96,15 @@ pub fn encode_pgm(&[u8], u32, u32, PixelLayout, impl enough::Stop) -> Result<all
 pub fn encode_ppm(&[u8], u32, u32, PixelLayout, impl enough::Stop) -> Result<alloc::vec::Vec<u8>>
 pub type Result<T> = core::result::Result<T, whereat::at::At<BitmapError>>
 
-## trait impls (5 types)
+## trait impls (6 types)
 
 BitmapError: Debug, Display, Error, From<enough::reason::StopReason>
 DecodeOutput<'a>: Clone, Debug
 ImageFormat: Clone, Copy, Debug, Eq, Hash, PartialEq
 Limits: Clone, Debug, Default, PartialEq
 PixelLayout: Clone, Copy, Debug, Eq, Hash, PartialEq
+UnsupportedKind: Clone, Copy, Debug, Eq, PartialEq
 
 ## auto traits
 
-5 types implement all of: Freeze, RefUnwindSafe, Send, Sync, Unpin, UnwindSafe
+6 types implement all of: Freeze, RefUnwindSafe, Send, Sync, Unpin, UnwindSafe

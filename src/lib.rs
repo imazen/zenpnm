@@ -199,7 +199,7 @@ mod codec;
 
 pub use decode::DecodeOutput;
 pub use enough::{Stop, Unstoppable};
-pub use error::{BitmapError, Result};
+pub use error::{BitmapError, Result, UnsupportedKind};
 pub use limits::Limits;
 pub use pixel::{ImageFormat, PixelLayout};
 /// Re-export of [`whereat::At`] so callers can name the public error type
@@ -402,6 +402,7 @@ fn decode_dispatch<'a>(
             return bmp::decode(data, limits, stop);
             #[cfg(not(feature = "bmp"))]
             return Err(at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Type,
                 "BMP support requires the 'bmp' feature".into(),
             )));
         }
@@ -411,6 +412,7 @@ fn decode_dispatch<'a>(
             return qoi::decode(data, limits, stop);
             #[cfg(not(feature = "qoi"))]
             return Err(at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Type,
                 "QOI support requires the 'qoi' feature".into(),
             )));
         }
@@ -420,6 +422,7 @@ fn decode_dispatch<'a>(
             return hdr::decode(data, limits, stop);
             #[cfg(not(feature = "hdr"))]
             return Err(at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Type,
                 "HDR support requires the 'hdr' feature".into(),
             )));
         }
@@ -428,6 +431,7 @@ fn decode_dispatch<'a>(
             return tga::decode(data, limits, stop);
             #[cfg(not(feature = "tga"))]
             return Err(at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Type,
                 "TGA support requires the 'tga' feature".into(),
             )));
         }

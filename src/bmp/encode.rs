@@ -1,6 +1,6 @@
 //! BMP encoder: uncompressed 24-bit and 32-bit BMP.
 
-use crate::error::BitmapError;
+use crate::error::{BitmapError, UnsupportedKind};
 use crate::pixel::PixelLayout;
 use alloc::vec::Vec;
 use enough::Stop;
@@ -246,10 +246,10 @@ fn get_rgb(pixels: &[u8], idx: usize, layout: PixelLayout) -> crate::Result<(u8,
             (g, g, g)
         }
         _ => {
-            return Err(at!(BitmapError::UnsupportedVariant(alloc::format!(
-                "cannot get RGB from {:?}",
-                layout
-            ))));
+            return Err(at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Feature,
+                alloc::format!("cannot get RGB from {:?}", layout)
+            )));
         }
     })
 }
@@ -291,10 +291,10 @@ fn get_rgba(pixels: &[u8], idx: usize, layout: PixelLayout) -> crate::Result<(u8
             (g, g, g, 255)
         }
         _ => {
-            return Err(at!(BitmapError::UnsupportedVariant(alloc::format!(
-                "cannot get RGBA from {:?}",
-                layout
-            ))));
+            return Err(at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Feature,
+                alloc::format!("cannot get RGBA from {:?}", layout)
+            )));
         }
     })
 }

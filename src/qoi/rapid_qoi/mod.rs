@@ -24,8 +24,15 @@ use core::{
 mod decode;
 mod encode;
 
-// `DecodeError` / `EncodeError` are defined in the submodules and flow out of
-// zenbitmaps as `Display`/`Debug` strings, so they are not re-exported here.
+// `DecodeError` is defined in the submodule and re-exported here so
+// `qoi::decode::parse_header` can match it variant-by-variant instead of
+// stringifying it (zenbitmaps issue: QOI decode errors were being flattened
+// via `{e:?}` into `BitmapError::InvalidHeader`, losing the structural
+// difference between "truncated input" and "not a QOI file"). `EncodeError`
+// has no analogous caller-facing precision need (both its variants are
+// internal buffer-sizing invariants zenbitmaps itself controls, not
+// adversarial-input-shaped), so it stays a `Display`/`Debug` string.
+pub(crate) use decode::DecodeError;
 
 const QOI_OP_INDEX: u8 = 0x00; /* 00xxxxxx */
 const QOI_OP_DIFF: u8 = 0x40; /* 01xxxxxx */

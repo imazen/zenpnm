@@ -9,20 +9,22 @@
 
 ## summary
 #
-#   inherent methods                            3
-#   trait roster entries (type × trait)         3
+#   inherent methods                            4
+#   trait roster entries (type × trait)         4
 #
 # per-module pub lines:
-#   (root)                            3
+#   (root)                            4
 
-## items (3 lines)
+## items (4 lines)
 
 pub fn BmpPermissiveness::assert_fields_are_eq(&self)
 pub fn ImageFormat::assert_fields_are_eq(&self)
 pub fn PixelLayout::assert_fields_are_eq(&self)
+pub fn UnsupportedKind::assert_fields_are_eq(&self)
 
-## trait impls (3 types)
+## trait impls (4 types)
 
 BmpPermissiveness: TrivialClone
 ImageFormat: TrivialClone
 PixelLayout: TrivialClone
+UnsupportedKind: TrivialClone

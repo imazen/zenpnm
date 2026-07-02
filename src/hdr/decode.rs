@@ -5,7 +5,7 @@ use enough::Stop;
 use whereat::at;
 
 use crate::alloc_util::{self, AllocPref};
-use crate::error::BitmapError;
+use crate::error::{BitmapError, UnsupportedKind};
 
 /// Parse a Radiance HDR header, returning (width, height, data_offset).
 ///
@@ -101,11 +101,10 @@ fn parse_resolution(s: &str) -> crate::Result<(u32, u32)> {
         })?;
         Ok((width, height))
     } else {
-        Err(at!(BitmapError::UnsupportedVariant(alloc::format!(
-            "HDR: unsupported orientation '{} {}'",
-            parts[0],
-            parts[2]
-        ))))
+        Err(at!(BitmapError::UnsupportedVariant(
+            UnsupportedKind::Feature,
+            alloc::format!("HDR: unsupported orientation '{} {}'", parts[0], parts[2])
+        )))
     }
 }
 

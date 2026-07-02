@@ -11,7 +11,7 @@ use enough::Stop;
 
 use super::utils::{expand_bits_to_byte, shift_signed};
 use crate::alloc_util::{self, AllocPref};
-use crate::error::BitmapError;
+use crate::error::{BitmapError, UnsupportedKind};
 use crate::pixel::PixelLayout;
 use whereat::at;
 
@@ -283,6 +283,7 @@ pub(crate) fn parse_bmp_header(data: &[u8], max_pixels: u64) -> crate::Result<Bm
         BmpPixelFormat::Gray8 => PixelLayout::Gray8,
         BmpPixelFormat::None => {
             return Err(at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Feature,
                 "unsupported BMP pixel format".into(),
             )));
         }
@@ -342,6 +343,7 @@ pub(crate) fn decode_bmp_pixels(
         BmpPixelFormat::Gray8 => PixelLayout::Gray8,
         BmpPixelFormat::None => {
             return Err(at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Feature,
                 "unsupported BMP pixel format".into(),
             )));
         }
@@ -379,6 +381,7 @@ pub(crate) fn decode_bmp_pixels_native(
         BmpPixelFormat::Gray8 => PixelLayout::Gray8,
         BmpPixelFormat::None => {
             return Err(at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Feature,
                 "unsupported BMP pixel format".into(),
             )));
         }
@@ -517,6 +520,7 @@ impl<'a> BmpDecoderState<'a> {
                         Some(c) => c,
                         None => {
                             return Err(at!(BitmapError::UnsupportedVariant(
+                                UnsupportedKind::Type,
                                 "unsupported BMP compression scheme".into(),
                             )));
                         }
@@ -677,21 +681,23 @@ impl<'a> BmpDecoderState<'a> {
                 if hsize.wrapping_sub(ihsize).wrapping_sub(14) > 0 || color_used > 0 {
                     self.pix_fmt = BmpPixelFormat::Pal8;
                 } else {
-                    return Err(at!(BitmapError::UnsupportedVariant(alloc::format!(
-                        "unknown palette for {}-color BMP",
-                        1u32 << bpp
-                    ))));
+                    return Err(at!(BitmapError::UnsupportedVariant(
+                        UnsupportedKind::Feature,
+                        alloc::format!("unknown palette for {}-color BMP", 1u32 << bpp)
+                    )));
                 }
             }
             _ => {
-                return Err(at!(BitmapError::UnsupportedVariant(alloc::format!(
-                    "BMP bit depth {bpp} unsupported"
-                ))));
+                return Err(at!(BitmapError::UnsupportedVariant(
+                    UnsupportedKind::Type,
+                    alloc::format!("BMP bit depth {bpp} unsupported")
+                )));
             }
         }
 
         if self.pix_fmt == BmpPixelFormat::None {
             return Err(at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Feature,
                 "unsupported BMP pixel format".into(),
             )));
         }
@@ -805,7 +811,7 @@ impl<'a> BmpDecoderState<'a> {
                 .saturating_mul(self.pix_fmt.num_components());
             let max_reasonable = available_bytes.saturating_mul(1024);
             if output_size > max_reasonable && available_bytes < 1024 * 1024 {
-                return Err(at!(BitmapError::InvalidData(alloc::format!(
+                return Err(at!(BitmapError::DecompressionBomb(alloc::format!(
                     "BMP claims {}×{} @ {bpp}bpp ({output_size} output bytes) \
                      but only {available_bytes} bytes of pixel data available",
                     self.width,
@@ -1016,6 +1022,7 @@ impl<'a> BmpDecoderState<'a> {
                 1 | 2 | 4 => {
                     if self.pix_fmt != BmpPixelFormat::Pal8 {
                         return Err(at!(BitmapError::UnsupportedVariant(
+                            UnsupportedKind::Feature,
                             "bit depths < 8 must have a palette".into(),
                         )));
                     }
@@ -1051,9 +1058,10 @@ impl<'a> BmpDecoderState<'a> {
                     self.flip_vertically ^= true;
                 }
                 d => {
-                    return Err(at!(BitmapError::UnsupportedVariant(alloc::format!(
-                        "unhandled BMP bit depth: {d}"
-                    ))));
+                    return Err(at!(BitmapError::UnsupportedVariant(
+                        UnsupportedKind::Type,
+                        alloc::format!("unhandled BMP bit depth: {d}")
+                    )));
                 }
             }
         }
@@ -1239,8 +1247,8 @@ impl<'a> BmpDecoderState<'a> {
             .saturating_mul(MAX_RLE_RATIO)
             .max(64 * 1024);
         if alloc_size > ratio_cap {
-            return Err(at!(BitmapError::InvalidData(
-                "RLE output far exceeds the compressed size (decompression bomb)".into(),
+            return Err(at!(BitmapError::DecompressionBomb(
+                "RLE output far exceeds the compressed size".into(),
             )));
         }
 
@@ -1251,10 +1259,10 @@ impl<'a> BmpDecoderState<'a> {
         let mut pos = 0usize;
 
         if !(self.depth == 4 || self.depth == 8 || self.depth == 16 || self.depth == 32) {
-            return Err(at!(BitmapError::UnsupportedVariant(alloc::format!(
-                "unknown depth + RLE combination: depth {}",
-                self.depth
-            ))));
+            return Err(at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Feature,
+                alloc::format!("unknown depth + RLE combination: depth {}", self.depth)
+            )));
         }
 
         stop.check().map_err(|r| at!(BitmapError::from(r)))?;

@@ -5,7 +5,7 @@
 //! * **Big, untrusted-sized buffers** (the full-image output pixel buffer,
 //!   sized from the header dimensions) default to the *fallible* `try_reserve`
 //!   path — a malicious header can demand far more than fits, so we want a
-//!   graceful [`BitmapError::LimitExceeded`] rather than an abort. (The
+//!   graceful [`BitmapError::OutOfMemory`] rather than an abort. (The
 //!   `Limits` byte/pixel caps already reject the worst cases up front; this is
 //!   defence in depth for whatever slips under the cap.)
 //! * **Small, bounded scratch** (one scanline, the ≤256-entry palette) defaults
@@ -86,7 +86,7 @@ pub(crate) fn resolve_fallible(pref: AllocPref, site_default_fallible: bool) -> 
 /// default when `pref` is [`CodecDefault`](AllocPref::CodecDefault).
 ///
 /// * fallible → `try_reserve_exact` then zero-fill, returning
-///   [`BitmapError::LimitExceeded`] on allocation failure.
+///   [`BitmapError::OutOfMemory`] on allocation failure.
 /// * infallible → `vec![0u8; n]` (single `calloc`, aborts on OOM).
 pub(crate) fn alloc_zeroed(
     pref: AllocPref,
@@ -96,7 +96,7 @@ pub(crate) fn alloc_zeroed(
     if resolve_fallible(pref, site_default_fallible) {
         let mut v = Vec::new();
         v.try_reserve_exact(n).map_err(|_| {
-            at!(BitmapError::LimitExceeded(alloc::format!(
+            at!(BitmapError::OutOfMemory(alloc::format!(
                 "out of memory allocating {n} bytes"
             )))
         })?;
@@ -113,7 +113,7 @@ pub(crate) fn alloc_zeroed(
 /// `pref` is the caller's [`AllocPref`]; `site_default_fallible` is this site's
 /// default when `pref` is [`CodecDefault`](AllocPref::CodecDefault).
 ///
-/// * fallible → `try_reserve_exact`, returning [`BitmapError::LimitExceeded`]
+/// * fallible → `try_reserve_exact`, returning [`BitmapError::OutOfMemory`]
 ///   on allocation failure.
 /// * infallible → `Vec::with_capacity(cap)` (aborts on OOM).
 ///
@@ -126,7 +126,7 @@ pub(crate) fn vec_with_capacity(
     if resolve_fallible(pref, site_default_fallible) {
         let mut v = Vec::new();
         v.try_reserve_exact(cap).map_err(|_| {
-            at!(BitmapError::LimitExceeded(alloc::format!(
+            at!(BitmapError::OutOfMemory(alloc::format!(
                 "out of memory allocating {cap} bytes"
             )))
         })?;
@@ -195,7 +195,7 @@ mod tests {
         assert!(r.is_err());
         assert!(matches!(
             r.unwrap_err().error(),
-            BitmapError::LimitExceeded(_)
+            BitmapError::OutOfMemory(_)
         ));
     }
 
@@ -205,7 +205,7 @@ mod tests {
         assert!(r.is_err());
         assert!(matches!(
             r.unwrap_err().error(),
-            BitmapError::LimitExceeded(_)
+            BitmapError::OutOfMemory(_)
         ));
     }
 

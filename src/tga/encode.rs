@@ -6,7 +6,7 @@
 use alloc::vec::Vec;
 use enough::Stop;
 
-use crate::error::BitmapError;
+use crate::error::{BitmapError, UnsupportedKind};
 use crate::pixel::PixelLayout;
 
 /// Encode pixels to uncompressed TGA format.
@@ -51,6 +51,7 @@ pub(crate) fn encode_tga(
         PixelLayout::Rgba8 | PixelLayout::Bgra8 => (2, 32, 4),
         _ => {
             return Err(whereat::at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Feature,
                 alloc::format!(
                     "cannot encode {:?} as TGA (supported: Gray8, Rgb8, Rgba8, Bgr8, Bgra8)",
                     layout

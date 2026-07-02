@@ -9,7 +9,7 @@
 
 use super::PnmHeader;
 use crate::alloc_util::{self, AllocPref};
-use crate::error::BitmapError;
+use crate::error::{BitmapError, UnsupportedKind};
 use crate::pixel::PixelLayout;
 use crate::pnm::PnmFormat;
 use alloc::string::String;
@@ -71,6 +71,7 @@ fn parse_p5_p6_header(data: &[u8], format: PnmFormat) -> crate::Result<PnmHeader
         PnmFormat::Ppm => (3, PixelLayout::Rgb8),
         _ => {
             return Err(whereat::at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Type,
                 alloc::format!("unexpected format {:?} in P5/P6 parser", format)
             )));
         }
@@ -218,6 +219,7 @@ fn parse_p7_header(data: &[u8]) -> crate::Result<PnmHeader> {
         (4, true) => PixelLayout::Rgba8,
         _ => {
             return Err(whereat::at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Feature,
                 alloc::format!("PAM DEPTH={depth} not supported")
             )));
         }

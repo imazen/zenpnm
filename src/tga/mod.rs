@@ -57,7 +57,7 @@ pub(crate) fn decode_with_alloc_pref<'a>(
         .checked_mul(height as usize)
         .and_then(|px| px.checked_mul(out_channels))
         .ok_or_else(|| {
-            whereat::at!(BitmapError::LimitExceeded(
+            whereat::at!(BitmapError::OutOfMemory(
                 "output size overflows usize".into()
             ))
         })?;

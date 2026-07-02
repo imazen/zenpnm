@@ -40,6 +40,11 @@ garb = { version = "0.2.5", default-features = false, optional = true }
 archmage = { version = "0.9.14", features = ["std"] }
 zenutils-fuzz = "0.1.0"
 zenbench = "0.1.4"
+# zencodec conformance harness (unpublished companion crate). Git-pinned to the
+# SAME zencodec rev as the [patch.crates-io] below so both resolve to one
+# unified zencodec. Provides check_decode_truncation_series (EOF/truncation).
+# Drop for a crates.io version dep once zencodec 0.1.26 + testkit publish.
+zencodec-testkit = { git = "https://github.com/imazen/zencodec", rev = "2427387f86c77fdf773ae2fa219926a49cd32d99" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 codec-corpus = "1"
@@ -73,4 +78,15 @@ all = ["bmp", "qoi", "tga", "hdr", "simd", "rgb", "imgref"]
 name = "codecs"
 harness = false
 required-features = ["bmp", "qoi", "tga", "hdr"]
+
+[patch.crates-io]
+# TEMP: until zencodec 0.1.26 ships (PR #116, caterr-reshape branch) — provides
+# the unreleased origin-first ErrorCategory taxonomy (Image/Request/Resource/
+# Policy/Lifecycle/Io/Internal) plus the zencodec-testkit
+# check_decode_truncation_series conformance check. Remove this patch and bump
+# the zencodec version dependency once 0.1.26 is published. Pinned to a commit
+# rev (not the branch tip) for reproducible builds, and to the SAME rev as the
+# zencodec-testkit dev-dep so both resolve to one unified zencodec; bump the
+# rev deliberately.
+zencodec = { git = "https://github.com/imazen/zencodec", rev = "2427387f86c77fdf773ae2fa219926a49cd32d99" }
 

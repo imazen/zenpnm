@@ -1,5 +1,5 @@
 use super::*;
-use whereat::{At, at};
+use whereat::At;
 
 use crate::alloc_util::AllocPref;
 
@@ -65,7 +65,7 @@ impl BmpEncoderConfig {
 }
 
 impl zencodec::encode::EncoderConfig for BmpEncoderConfig {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
     type Job = BmpEncodeJob;
 
     fn format() -> ImageFormat {
@@ -112,7 +112,7 @@ pub struct BmpEncodeJob {
 }
 
 impl zencodec::encode::EncodeJob for BmpEncodeJob {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
     type Enc = BmpEncoder;
     type AnimationFrameEnc = ();
 
@@ -130,7 +130,7 @@ impl zencodec::encode::EncodeJob for BmpEncodeJob {
         self
     }
 
-    fn encoder(self) -> crate::Result<BmpEncoder> {
+    fn encoder(self) -> Result<BmpEncoder, Self::Error> {
         Ok(BmpEncoder {
             config: self.config,
             limits: self.limits,
@@ -138,10 +138,8 @@ impl zencodec::encode::EncodeJob for BmpEncodeJob {
         })
     }
 
-    fn animation_frame_encoder(self) -> crate::Result<()> {
-        Err(at!(BitmapError::from(
-            zencodec::UnsupportedOperation::AnimationEncode,
-        )))
+    fn animation_frame_encoder(self) -> Result<(), Self::Error> {
+        Err(BitmapError::from(zencodec::UnsupportedOperation::AnimationEncode).into())
     }
 }
 
@@ -172,13 +170,13 @@ impl BmpEncoder {
 }
 
 impl zencodec::encode::Encoder for BmpEncoder {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
 
-    fn reject(op: zencodec::UnsupportedOperation) -> At<BitmapError> {
-        at!(BitmapError::from(op))
+    fn reject(op: zencodec::UnsupportedOperation) -> At<zencodec::CodecError> {
+        BitmapError::from(op).into()
     }
 
-    fn encode(self, pixels: PixelSlice<'_>) -> crate::Result<EncodeOutput> {
+    fn encode(self, pixels: PixelSlice<'_>) -> Result<EncodeOutput, Self::Error> {
         // Bit-exact load-bearing narrowing (dead alpha / chroma-free /
         // replicated-low-bits) before format mapping — see
         // `super::reduce_for_raw_encode`. BMP encodes only 24-bit RGB and
@@ -205,7 +203,7 @@ impl zencodec::encode::Encoder for BmpEncoder {
         let h = pixels.rows();
 
         if let Some(limits) = self.effective_limits() {
-            limits.check(w, h)?;
+            limits.check(w, h).map_err(zencodec::CodecError::of)?;
         }
 
         let bytes = pixels.contiguous_bytes();
@@ -213,15 +211,16 @@ impl zencodec::encode::Encoder for BmpEncoder {
             (ChannelType::U8, ChannelLayout::Rgb) => (crate::PixelLayout::Rgb8, false),
             (ChannelType::U8, ChannelLayout::Rgba) => (crate::PixelLayout::Rgba8, true),
             (ChannelType::U8, ChannelLayout::Bgra) => (crate::PixelLayout::Bgra8, true),
+            // A well-formed request for a pixel format this encoder does not
+            // support — caller-request-origin, routed via the existing
+            // zencodec::UnsupportedOperation::PixelFormat axis.
             _ => {
-                return Err(at!(BitmapError::UnsupportedVariant(alloc::format!(
-                    "BMP encode: unsupported pixel format: {:?}",
-                    desc
-                ))));
+                return Err(Self::reject(zencodec::UnsupportedOperation::PixelFormat));
             }
         };
 
-        let encoded = crate::bmp::encode(&bytes, w, h, layout, alpha, stop)?;
+        let encoded = crate::bmp::encode(&bytes, w, h, layout, alpha, stop)
+            .map_err(zencodec::CodecError::of)?;
         Ok(EncodeOutput::new(encoded, ImageFormat::Bmp))
     }
 }
@@ -248,7 +247,7 @@ impl BmpDecoderConfig {
 }
 
 impl zencodec::decode::DecoderConfig for BmpDecoderConfig {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
     type Job<'a> = BmpDecodeJob;
 
     fn formats() -> &'static [ImageFormat] {
@@ -301,10 +300,10 @@ pub struct BmpDecodeJob {
 }
 
 impl<'a> zencodec::decode::DecodeJob<'a> for BmpDecodeJob {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
     type Dec = BmpDecoder<'a>;
-    type StreamDec = zencodec::Unsupported<At<BitmapError>>;
-    type AnimationFrameDec = zencodec::Unsupported<At<BitmapError>>;
+    type StreamDec = zencodec::Unsupported<At<zencodec::CodecError>>;
+    type AnimationFrameDec = zencodec::Unsupported<At<zencodec::CodecError>>;
 
     fn with_stop(mut self, stop: zencodec::StopToken) -> Self {
         self.stop = Some(stop);
@@ -323,9 +322,10 @@ impl<'a> zencodec::decode::DecodeJob<'a> for BmpDecodeJob {
         self
     }
 
-    fn probe(&self, data: &[u8]) -> crate::Result<ImageInfo> {
+    fn probe(&self, data: &[u8]) -> Result<ImageInfo, Self::Error> {
         // Metadata only — do not reject on the pixel-count cap.
-        let header = crate::bmp::decode::parse_bmp_header(data, u64::MAX)?;
+        let header = crate::bmp::decode::parse_bmp_header(data, u64::MAX)
+            .map_err(zencodec::CodecError::of)?;
         let has_alpha = matches!(
             header.layout,
             crate::PixelLayout::Rgba8 | crate::PixelLayout::Bgra8
@@ -353,9 +353,10 @@ impl<'a> zencodec::decode::DecodeJob<'a> for BmpDecodeJob {
         Ok(info)
     }
 
-    fn output_info(&self, data: &[u8]) -> crate::Result<OutputInfo> {
+    fn output_info(&self, data: &[u8]) -> Result<OutputInfo, Self::Error> {
         // Metadata only — do not reject on the pixel-count cap.
-        let header = crate::bmp::decode::parse_bmp_header(data, u64::MAX)?;
+        let header = crate::bmp::decode::parse_bmp_header(data, u64::MAX)
+            .map_err(zencodec::CodecError::of)?;
         let has_alpha = matches!(
             header.layout,
             crate::PixelLayout::Rgba8 | crate::PixelLayout::Bgra8
@@ -371,14 +372,15 @@ impl<'a> zencodec::decode::DecodeJob<'a> for BmpDecodeJob {
         self,
         data: Cow<'a, [u8]>,
         _preferred: &[PixelDescriptor],
-    ) -> crate::Result<BmpDecoder<'a>> {
+    ) -> Result<BmpDecoder<'a>, Self::Error> {
         if let Some(max) = self.max_input_bytes
             && data.len() as u64 > max
         {
-            return Err(at!(BitmapError::LimitExceeded(alloc::format!(
+            return Err(BitmapError::LimitExceeded(alloc::format!(
                 "input size {} exceeds limit {max}",
                 data.len()
-            ))));
+            ))
+            .into());
         }
         let permissiveness = policy_to_bmp_permissiveness(self.policy.as_ref());
         Ok(BmpDecoder {
@@ -398,7 +400,7 @@ impl<'a> zencodec::decode::DecodeJob<'a> for BmpDecodeJob {
         preferred: &[PixelDescriptor],
     ) -> Result<OutputInfo, Self::Error> {
         zencodec::helpers::copy_decode_to_sink(self, data, sink, preferred, |e| {
-            at!(BitmapError::InvalidData(e.to_string()))
+            BitmapError::InvalidData(e.to_string()).into()
         })
     }
 
@@ -406,20 +408,16 @@ impl<'a> zencodec::decode::DecodeJob<'a> for BmpDecodeJob {
         self,
         _data: Cow<'a, [u8]>,
         _preferred: &[PixelDescriptor],
-    ) -> crate::Result<zencodec::Unsupported<At<BitmapError>>> {
-        Err(at!(BitmapError::from(
-            zencodec::UnsupportedOperation::RowLevelDecode,
-        )))
+    ) -> Result<zencodec::Unsupported<At<zencodec::CodecError>>, Self::Error> {
+        Err(BitmapError::from(zencodec::UnsupportedOperation::RowLevelDecode).into())
     }
 
     fn animation_frame_decoder(
         self,
         _data: Cow<'a, [u8]>,
         _preferred: &[PixelDescriptor],
-    ) -> crate::Result<zencodec::Unsupported<At<BitmapError>>> {
-        Err(at!(BitmapError::from(
-            zencodec::UnsupportedOperation::AnimationDecode,
-        )))
+    ) -> Result<zencodec::Unsupported<At<zencodec::CodecError>>, Self::Error> {
+        Err(BitmapError::from(zencodec::UnsupportedOperation::AnimationDecode).into())
     }
 }
 
@@ -442,9 +440,9 @@ impl BmpDecoder<'_> {
 }
 
 impl zencodec::decode::Decode for BmpDecoder<'_> {
-    type Error = At<BitmapError>;
+    type Error = At<zencodec::CodecError>;
 
-    fn decode(self) -> crate::Result<DecodeOutput> {
+    fn decode(self) -> Result<DecodeOutput, Self::Error> {
         let limits = self.effective_limits();
         let stop: &dyn Stop = match &self.stop {
             Some(s) => s,
@@ -456,8 +454,9 @@ impl zencodec::decode::Decode for BmpDecoder<'_> {
             self.permissiveness,
             self.alloc_pref,
             stop,
-        )?;
-        decode_output_from_internal(&decoded, ImageFormat::Bmp)
+        )
+        .map_err(zencodec::CodecError::of)?;
+        decode_output_from_internal(&decoded, ImageFormat::Bmp).map_err(zencodec::CodecError::of)
     }
 }
 

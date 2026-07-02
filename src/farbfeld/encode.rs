@@ -6,7 +6,7 @@ use alloc::vec::Vec;
 use enough::Stop;
 use whereat::at;
 
-use crate::error::BitmapError;
+use crate::error::{BitmapError, UnsupportedKind};
 use crate::pixel::PixelLayout;
 
 /// Encode pixels to farbfeld format.
@@ -162,10 +162,13 @@ pub(crate) fn encode_farbfeld(
             }
         }
         _ => {
-            return Err(at!(BitmapError::UnsupportedVariant(alloc::format!(
-                "cannot encode {:?} as farbfeld (supported: Rgba16, Rgba8, Rgb8, Gray8)",
-                layout
-            ))));
+            return Err(at!(BitmapError::UnsupportedVariant(
+                UnsupportedKind::Feature,
+                alloc::format!(
+                    "cannot encode {:?} as farbfeld (supported: Rgba16, Rgba8, Rgb8, Gray8)",
+                    layout
+                )
+            )));
         }
     }
 

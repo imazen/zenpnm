@@ -8,7 +8,7 @@ use alloc::vec::Vec;
 use enough::Stop;
 
 use crate::alloc_util::{self, AllocPref};
-use crate::error::BitmapError;
+use crate::error::{BitmapError, UnsupportedKind};
 use crate::pixel::PixelLayout;
 
 /// Parsed TGA header (18 bytes, little-endian).
@@ -85,6 +85,7 @@ pub(crate) fn parse_header(data: &[u8]) -> crate::Result<TgaHeader> {
     // Validate image type
     if !matches!(header.image_type, 1 | 2 | 3 | 9 | 10 | 11) {
         return Err(whereat::at!(BitmapError::UnsupportedVariant(
+            UnsupportedKind::Type,
             alloc::format!("TGA image type {} is not supported", header.image_type)
         )));
     }
@@ -122,6 +123,7 @@ pub(crate) fn parse_header(data: &[u8]) -> crate::Result<TgaHeader> {
             // Color-mapped: index depth must be 8 (we only support 8-bit indices)
             if header.pixel_depth != 8 {
                 return Err(whereat::at!(BitmapError::UnsupportedVariant(
+                    UnsupportedKind::Feature,
                     alloc::format!(
                         "TGA color-mapped pixel_depth {} not supported (only 8-bit indices)",
                         header.pixel_depth
@@ -131,6 +133,7 @@ pub(crate) fn parse_header(data: &[u8]) -> crate::Result<TgaHeader> {
             // Palette entry depth
             if !matches!(header.color_map_depth, 15 | 16 | 24 | 32) {
                 return Err(whereat::at!(BitmapError::UnsupportedVariant(
+                    UnsupportedKind::Feature,
                     alloc::format!(
                         "TGA color_map_depth {} not supported (must be 15, 16, 24, or 32)",
                         header.color_map_depth
@@ -142,6 +145,7 @@ pub(crate) fn parse_header(data: &[u8]) -> crate::Result<TgaHeader> {
             // Truecolor
             if !matches!(header.pixel_depth, 15 | 16 | 24 | 32) {
                 return Err(whereat::at!(BitmapError::UnsupportedVariant(
+                    UnsupportedKind::Feature,
                     alloc::format!(
                         "TGA truecolor pixel_depth {} not supported (must be 15, 16, 24, or 32)",
                         header.pixel_depth
@@ -153,6 +157,7 @@ pub(crate) fn parse_header(data: &[u8]) -> crate::Result<TgaHeader> {
             // Grayscale
             if header.pixel_depth != 8 {
                 return Err(whereat::at!(BitmapError::UnsupportedVariant(
+                    UnsupportedKind::Feature,
                     alloc::format!(
                         "TGA grayscale pixel_depth {} not supported (only 8-bit)",
                         header.pixel_depth
@@ -187,6 +192,7 @@ pub(crate) fn decode_pixels(
             32 => 4,
             _ => {
                 return Err(whereat::at!(BitmapError::UnsupportedVariant(
+                    UnsupportedKind::Feature,
                     alloc::format!(
                         "TGA color_map_depth {} not supported",
                         header.color_map_depth

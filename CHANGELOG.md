@@ -6,6 +6,33 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Implement `zencodec::CategorizedError` for `BitmapError` (patched against
+  the unpublished origin-first `ErrorCategory` reshape,
+  `imazen/zencodec` `caterr-reshape` branch commit `2427387f`; PR #116, not
+  yet merged; `[patch.crates-io]` pin in `Cargo.toml`) plus a
+  `From<BitmapError> for At<zencodec::CodecError>` bridge, so every
+  `zencodec` trait adapter (`type Error`) is now `At<zencodec::CodecError>`
+  (Pattern B) instead of the bare `At<BitmapError>` (Pattern A) — the
+  category and originating codec name (`"zenbitmaps"`) now survive
+  dyn-dispatch type erasure. New `BitmapError::OutOfMemory(String)` (genuine
+  `try_reserve`/allocator-exhaustion failures and `checked_mul` address-space
+  overflows — the latter also covers the pre-existing `DimensionsTooLarge`
+  variant, which now categorizes as `Resource(OutOfMemory)` too) and
+  `BitmapError::DecompressionBomb(String)` (the BMP RLE-ratio and
+  1024×-amplification guards, now routed to the new
+  `LimitKind::DecompressionRatio` instead of a generic `InvalidData`) —
+  distinct from a configured `ResourceLimits` cap
+  (`BitmapError::LimitExceeded`, unchanged shape, still categorizes to
+  `Resource(Limits(kind))` via a message-prefix classifier locked by a test
+  against every real construction site). QOI header decode errors
+  (`rapid_qoi::DecodeError`) are matched variant-by-variant instead of
+  stringified via `{e:?}` — `NotEnoughData` now categorizes as
+  `Image(UnexpectedEof)` and `InvalidMagic` as `Image(Unsupported(Type))`,
+  rather than both collapsing into one `InvalidHeader(String)` bucket. Added
+  `tests/truncation_series.rs` (zencodec-testkit
+  `check_decode_truncation_series`, one test per format) verifying a
+  truncated encoded file always categorizes as incomplete-input, never an
+  internal/OOM/caller-fault category.
 - Honor `zencodec::AllocPreference` (3-mode, per-site) at untrusted decode
   allocations, and implement `estimate_decode_resources` for all six bitmap
   `DecoderConfig`s. Each format's full-image output buffer (sized from the
@@ -31,6 +58,24 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **BREAKING (0.2.0):** `BitmapError::UnsupportedVariant` now carries a
+  leading `UnsupportedKind` tag (`Type` | `Feature`) ahead of the existing
+  `String` message: `UnsupportedVariant(String)` →
+  `UnsupportedVariant(UnsupportedKind, String)`. `Type` = the format,
+  container, or named sub-format/profile isn't implemented at all (an
+  unrecognized BMP compression scheme or bit depth, a PNM sub-format like
+  PBM, a whole format disabled at compile time); `Feature` = the format (and
+  specific sub-variant) *is* handled, but a narrower configuration within it
+  (a bit depth, pixel-layout combination, header field value) isn't. Maps to
+  `ErrorCategory::Image(ImageError::Unsupported(UnsupportedImageKind::Type |
+  ::Feature))`. **Migration:** `BitmapError::UnsupportedVariant(msg)` →
+  `BitmapError::UnsupportedVariant(_, msg)`, or `UnsupportedVariant(..)` if
+  the kind and message are both irrelevant to the match. The zencodec
+  adapters' own "caller supplied a pixel format this encoder can't produce"
+  case no longer constructs `UnsupportedVariant` at all — it now rejects via
+  the existing `zencodec::UnsupportedOperation::PixelFormat` axis (already
+  used for the codec's other capability-negotiation failures), which is a
+  caller-request-origin failure, not an image-format one.
 - deps: migrate to published zencodec 0.1.24 estimate API; drop the temporary
   `[patch.crates-io] zencodec = { git, rev = "0f71295" }` pin (the `estimate` API
   is now on crates.io). The shared `codec::trivial_encode_resources` helper follows

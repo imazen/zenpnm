@@ -8,7 +8,7 @@ use alloc::vec::Vec;
 use enough::Stop;
 
 use crate::alloc_util::{self, AllocPref};
-use crate::error::BitmapError;
+use crate::error::{BitmapError, UnsupportedKind};
 use crate::qoi::rapid_qoi;
 
 /// Parsed QOI header info.
@@ -21,10 +21,42 @@ pub(crate) struct QoiHeaderInfo {
     pub is_linear: bool,
 }
 
+/// Map the vendored decoder's [`rapid_qoi::DecodeError`] to the crate's own
+/// [`BitmapError`], variant-by-variant, instead of stringifying it via
+/// `{e:?}` — so a truncated buffer categorizes as
+/// [`BitmapError::UnexpectedEof`] (incomplete client input) rather than a
+/// generic malformed-header string, and a non-QOI buffer categorizes as
+/// [`BitmapError::UnrecognizedFormat`] rather than "invalid header".
+fn map_decode_header_error(e: rapid_qoi::DecodeError) -> BitmapError {
+    use rapid_qoi::DecodeError as E;
+    match e {
+        // Too few bytes for even a 14-byte QOI header — an incomplete
+        // request, not a malformed one.
+        E::NotEnoughData => BitmapError::UnexpectedEof,
+        // First 4 bytes aren't "qoif" — this isn't a QOI file at all.
+        E::InvalidMagic => BitmapError::UnrecognizedFormat,
+        // Header is QOI-shaped but a field is out of the spec'd range —
+        // recognized container, unsupported header value.
+        E::InvalidChannelsValue => BitmapError::UnsupportedVariant(
+            UnsupportedKind::Feature,
+            "QOI channels value must be 3 or 4".into(),
+        ),
+        E::InvalidColorSpaceValue => BitmapError::UnsupportedVariant(
+            UnsupportedKind::Feature,
+            "QOI color space value must be 0 or 1".into(),
+        ),
+        // Not producible by `decode_header` (only by a buffer-writing decode
+        // call this crate never makes here) — kept for match exhaustiveness.
+        E::OutputIsTooSmall => {
+            BitmapError::InvalidData("QOI decode_header: unexpected output-size error".into())
+        }
+    }
+}
+
 /// Parse QOI header, returning dimensions, alpha, and colorspace.
 pub(crate) fn parse_header(data: &[u8]) -> crate::Result<QoiHeaderInfo> {
     let qoi = rapid_qoi::Qoi::decode_header(data)
-        .map_err(|e| whereat::at!(BitmapError::InvalidHeader(alloc::format!("{e:?}"))))?;
+        .map_err(|e| whereat::at!(map_decode_header_error(e)))?;
 
     if qoi.width == 0 {
         return Err(whereat::at!(BitmapError::InvalidHeader(
