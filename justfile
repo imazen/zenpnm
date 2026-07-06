@@ -31,10 +31,8 @@ feature-check:
     cargo check --features bmp
     cargo check --features rgb
     cargo check --features imgref
-    cargo check --features zencodec
     cargo test --no-default-features
     cargo test --features bmp
-    cargo test --features zencodec
     cargo test --all-features
 
 ci: fmt clippy test feature-check
