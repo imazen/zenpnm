@@ -216,7 +216,7 @@ impl zencodec::CategorizedError for BitmapError {
                 RequestError::Invalid(InvalidKind::Buffer).into()
             }
 
-            BitmapError::Cancelled(reason) => zencodec::ErrorCategory::Lifecycle(*reason),
+            BitmapError::Cancelled(reason) => zencodec::ErrorCategory::Stopped(*reason),
 
             #[cfg(feature = "zencodec")]
             BitmapError::UnsupportedOperation(op) => op.category(),
@@ -324,11 +324,11 @@ mod tests {
         );
         assert_eq!(
             BitmapError::Cancelled(enough::StopReason::Cancelled).category(),
-            C::Lifecycle(enough::StopReason::Cancelled)
+            C::Stopped(enough::StopReason::Cancelled)
         );
         assert_eq!(
             BitmapError::Cancelled(enough::StopReason::TimedOut).category(),
-            C::Lifecycle(enough::StopReason::TimedOut)
+            C::Stopped(enough::StopReason::TimedOut)
         );
         assert_eq!(
             BitmapError::from(zencodec::UnsupportedOperation::PixelFormat).category(),
