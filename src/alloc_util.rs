@@ -46,9 +46,11 @@ pub(crate) enum AllocPref {
     #[default]
     CodecDefault,
     /// Force the fallible `try_reserve` path everywhere (graceful OOM error).
+    #[cfg_attr(not(feature = "zencodec"), allow(dead_code))]
     Fallible,
     /// Force the infallible `vec!` / `Vec::with_capacity` path everywhere
     /// (faster single `calloc`; aborts on OOM).
+    #[cfg_attr(not(feature = "zencodec"), allow(dead_code))]
     Infallible,
 }
 
