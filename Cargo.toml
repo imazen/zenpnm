@@ -40,11 +40,10 @@ garb = { version = "0.2.5", default-features = false, optional = true }
 archmage = { version = "0.9.14", features = ["std"] }
 zenutils-fuzz = "0.1.0"
 zenbench = "0.1.4"
-# zencodec conformance harness (unpublished companion crate). Tag-pinned to the
-# SAME zencodec release tag as the [patch.crates-io] below so both resolve to
-# one unified zencodec. Provides check_decode_truncation_series (EOF/truncation).
-# Drop for a crates.io version dep once zencodec-testkit itself publishes.
-zencodec-testkit = { git = "https://github.com/imazen/zencodec", tag = "v0.1.26" }
+# zencodec conformance harness. Provides check_decode_truncation_series
+# (EOF/truncation). Its zencodec requirement (^0.1.26) unifies with the
+# [dependencies] entry above on one crates.io zencodec.
+zencodec-testkit = "0.1.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 codec-corpus = "1"
@@ -78,16 +77,4 @@ all = ["bmp", "qoi", "tga", "hdr", "simd", "rgb", "imgref"]
 name = "codecs"
 harness = false
 required-features = ["bmp", "qoi", "tga", "hdr"]
-
-[patch.crates-io]
-# zencodec-testkit (dev-dependency above) is unpublished and its own manifest
-# path-deps on zencodec within the same git checkout. Without this patch,
-# crates.io zencodec (the [dependencies] entry above) and the testkit's
-# path-embedded zencodec would resolve as two distinct crates, and every
-# conformance test (tests/truncation_series.rs) would fail to compile with
-# E0277 "multiple different versions of crate `zencodec`". This unifies the
-# whole graph on the release tag, which is content-identical to the published
-# 0.1.26 crate. Remove once zencodec-testkit itself ships on crates.io and the
-# dev-dependency above switches to a version requirement.
-zencodec = { git = "https://github.com/imazen/zencodec", tag = "v0.1.26" }
 

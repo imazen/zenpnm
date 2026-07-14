@@ -6,10 +6,10 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Implement `zencodec::CategorizedError` for `BitmapError` (patched against
-  the unpublished origin-first `ErrorCategory` reshape,
-  `imazen/zencodec` `caterr-reshape` branch commit `2427387f`; PR #116, not
-  yet merged; `[patch.crates-io]` pin in `Cargo.toml`) plus a
+- Implement `zencodec::CategorizedError` for `BitmapError` (the origin-first
+  `ErrorCategory` taxonomy, now published as zencodec `0.1.26`; originally
+  landed against the pre-release `caterr-reshape` branch via a since-removed
+  temporary `[patch.crates-io]` pin) plus a
   `From<BitmapError> for At<zencodec::CodecError>` bridge, so every
   `zencodec` trait adapter (`type Error`) is now `At<zencodec::CodecError>`
   (Pattern B) instead of the bare `At<BitmapError>` (Pattern A) — the
@@ -76,6 +76,11 @@ All notable changes to this project will be documented in this file.
   the existing `zencodec::UnsupportedOperation::PixelFormat` axis (already
   used for the codec's other capability-negotiation failures), which is a
   caller-request-origin failure, not an image-format one.
+- deps: zencodec is now the published crates.io `0.1.26` and the conformance
+  harness dev-dependency is the published `zencodec-testkit 0.1.0`; the
+  temporary `[patch.crates-io] zencodec = { git, .. }` pin for the
+  pre-release taxonomy (and its interim v0.1.26 release-tag retarget,
+  `c0e2e0a`) is removed — the whole dependency graph resolves from crates.io.
 - deps: migrate to published zencodec 0.1.24 estimate API; drop the temporary
   `[patch.crates-io] zencodec = { git, rev = "0f71295" }` pin (the `estimate` API
   is now on crates.io). The shared `codec::trivial_encode_resources` helper follows
