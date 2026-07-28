@@ -78,3 +78,8 @@ name = "codecs"
 harness = false
 required-features = ["bmp", "qoi", "tga", "hdr"]
 
+
+[[bench]]
+name = "swizzle"
+harness = false
+required-features = ["simd"]

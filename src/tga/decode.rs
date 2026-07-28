@@ -333,23 +333,9 @@ fn decode_raw(
         out[..total_src_bytes].copy_from_slice(&pixel_data[..total_src_bytes]);
         // In-place BGR→RGB / BGRA→RGBA swizzle
         if out_channels == 3 {
-            #[cfg(feature = "simd")]
-            {
-                let _ = garb::bytes::rgb_to_bgr_inplace(out);
-            }
-            #[cfg(not(feature = "simd"))]
-            for pixel in out.chunks_exact_mut(3) {
-                pixel.swap(0, 2);
-            }
+            crate::swizzle::swap_rb_3(out);
         } else {
-            #[cfg(feature = "simd")]
-            {
-                let _ = garb::bytes::rgba_to_bgra_inplace(out);
-            }
-            #[cfg(not(feature = "simd"))]
-            for pixel in out.chunks_exact_mut(4) {
-                pixel.swap(0, 2);
-            }
+            crate::swizzle::swap_rb_4(out);
         }
         return Ok(());
     }

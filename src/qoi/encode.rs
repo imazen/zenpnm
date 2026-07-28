@@ -45,14 +45,7 @@ pub(crate) fn encode_qoi(
             stop.check()
                 .map_err(|r| whereat::at!(BitmapError::from(r)))?;
             let mut rgb = pixels[..expected].to_vec();
-            #[cfg(feature = "simd")]
-            {
-                let _ = garb::bytes::rgb_to_bgr_inplace(&mut rgb);
-            }
-            #[cfg(not(feature = "simd"))]
-            for pixel in rgb.chunks_exact_mut(3) {
-                pixel.swap(0, 2);
-            }
+            crate::swizzle::swap_rb_3(&mut rgb);
             (Some(rgb), rapid_qoi::Colors::Srgb)
         }
         PixelLayout::Bgra8 => {
@@ -60,14 +53,7 @@ pub(crate) fn encode_qoi(
             stop.check()
                 .map_err(|r| whereat::at!(BitmapError::from(r)))?;
             let mut rgba = pixels[..expected].to_vec();
-            #[cfg(feature = "simd")]
-            {
-                let _ = garb::bytes::rgba_to_bgra_inplace(&mut rgba);
-            }
-            #[cfg(not(feature = "simd"))]
-            for pixel in rgba.chunks_exact_mut(4) {
-                pixel.swap(0, 2);
-            }
+            crate::swizzle::swap_rb_4(&mut rgba);
             (Some(rgba), rapid_qoi::Colors::SrgbLinA)
         }
         PixelLayout::Bgrx8 => {
@@ -75,14 +61,8 @@ pub(crate) fn encode_qoi(
             stop.check()
                 .map_err(|r| whereat::at!(BitmapError::from(r)))?;
             let mut rgba = pixels[..expected].to_vec();
-            #[cfg(feature = "simd")]
-            {
-                let _ = garb::bytes::rgba_to_bgra_inplace(&mut rgba);
-                let _ = garb::bytes::fill_alpha_rgba(&mut rgba);
-            }
-            #[cfg(not(feature = "simd"))]
+            crate::swizzle::swap_rb_4(&mut rgba);
             for pixel in rgba.chunks_exact_mut(4) {
-                pixel.swap(0, 2);
                 pixel[3] = 255;
             }
             (Some(rgba), rapid_qoi::Colors::SrgbLinA)

@@ -170,6 +170,7 @@ mod decode;
 mod error;
 mod limits;
 mod pixel;
+mod swizzle;
 
 mod pnm;
 

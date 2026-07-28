@@ -1006,9 +1006,7 @@ impl<'a> BmpDecoderState<'a> {
                             self.bytes.read_exact_bytes(out)?;
                             let _ = self.bytes.skip(in_width.saturating_sub(out_width));
                             if swap_channels {
-                                for pix_pair in out.chunks_exact_mut(3) {
-                                    pix_pair.swap(0, 2);
-                                }
+                                crate::swizzle::swap_rb_3(out);
                             }
                         }
                         // Only RGB data is now in BGR order awaiting the final
@@ -1086,16 +1084,8 @@ impl<'a> BmpDecoderState<'a> {
         // Convert to BGR(A) if requested and not already done
         if PRESERVE_BGRA && !self.image_in_bgra {
             match self.pix_fmt.num_components() {
-                3 => {
-                    for pix in buf.chunks_exact_mut(3) {
-                        pix.swap(0, 2);
-                    }
-                }
-                4 => {
-                    for pix in buf.chunks_exact_mut(4) {
-                        pix.swap(0, 2);
-                    }
-                }
+                3 => crate::swizzle::swap_rb_3(buf),
+                4 => crate::swizzle::swap_rb_4(buf),
                 _ => {}
             }
         }
