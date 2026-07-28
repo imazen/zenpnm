@@ -144,47 +144,54 @@ fn encode_ppm(
             out.extend_from_slice(&pixels[..w * h * 3]);
         }
         PixelLayout::Bgr8 => {
-            for i in 0..(w * h) {
-                if i % w.saturating_mul(16).max(1) == 0 {
+            // Row-at-a-time slice writes instead of per-pixel `Vec::push`.
+            // BGR -> RGB, routed through garb when the `simd` feature is on.
+            // Kept per-row so the every-16-rows cancellation check survives.
+            for row in 0..h {
+                if row % 16 == 0 {
                     stop.check()
                         .map_err(|r| whereat::at!(BitmapError::from(r)))?;
                 }
-                let off = i * 3;
-                out.push(pixels[off + 2]);
-                out.push(pixels[off + 1]);
-                out.push(pixels[off]);
+                let s = out.len();
+                out.resize(s + w * 3, 0);
+                let src = &pixels[row * w * 3..(row + 1) * w * 3];
+                crate::swizzle::bgr_to_rgb_into(src, &mut out[s..]);
             }
         }
         PixelLayout::Rgba8 => {
-            for i in 0..(w * h) {
-                if i % w.saturating_mul(16).max(1) == 0 {
+            // Row-at-a-time slice writes instead of per-pixel `Vec::push`.
+            // RGBA -> RGB (drop alpha).
+            // Kept per-row so the every-16-rows cancellation check survives.
+            for row in 0..h {
+                if row % 16 == 0 {
                     stop.check()
                         .map_err(|r| whereat::at!(BitmapError::from(r)))?;
                 }
-                let off = i * 4;
-                out.push(pixels[off]);
-                out.push(pixels[off + 1]);
-                out.push(pixels[off + 2]);
+                let s = out.len();
+                out.resize(s + w * 3, 0);
+                let src = &pixels[row * w * 4..(row + 1) * w * 4];
+                crate::swizzle::rgba_to_rgb_into(src, &mut out[s..]);
             }
         }
         PixelLayout::Bgra8 | PixelLayout::Bgrx8 => {
-            for i in 0..(w * h) {
-                if i % w.saturating_mul(16).max(1) == 0 {
+            // Row-at-a-time slice writes instead of per-pixel `Vec::push`.
+            // BGRA -> RGB (swap R/B, drop alpha).
+            // Kept per-row so the every-16-rows cancellation check survives.
+            for row in 0..h {
+                if row % 16 == 0 {
                     stop.check()
                         .map_err(|r| whereat::at!(BitmapError::from(r)))?;
                 }
-                let off = i * 4;
-                out.push(pixels[off + 2]);
-                out.push(pixels[off + 1]);
-                out.push(pixels[off]);
+                let s = out.len();
+                out.resize(s + w * 3, 0);
+                let src = &pixels[row * w * 4..(row + 1) * w * 4];
+                crate::swizzle::bgra_to_rgb_into(src, &mut out[s..]);
             }
         }
         PixelLayout::Gray8 => {
-            for &g in &pixels[..w * h] {
-                out.push(g);
-                out.push(g);
-                out.push(g);
-            }
+            let s = out.len();
+            out.resize(s + w * h * 3, 0);
+            crate::swizzle::gray_to_rgb_into(&pixels[..w * h], &mut out[s..]);
         }
         _ => {
             return Err(whereat::at!(BitmapError::UnsupportedVariant(

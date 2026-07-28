@@ -17,6 +17,19 @@ fn buf(n: usize) -> Vec<u8> {
     (0..n).map(|i| (i * 37 % 251) as u8).collect()
 }
 
+/// The PNM encode arms as they were: per-pixel `Vec::push` into a growing
+/// buffer. Kept so the comparison is against what actually shipped.
+fn push_bgra_to_rgb(pixels: &[u8], n: usize) -> Vec<u8> {
+    let mut out = Vec::with_capacity(n * 3);
+    for i in 0..n {
+        let off = i * 4;
+        out.push(pixels[off + 2]);
+        out.push(pixels[off + 1]);
+        out.push(pixels[off]);
+    }
+    out
+}
+
 fn bench_swizzle(suite: &mut Suite) {
     // 1920x1080 is the realistic whole-buffer decode case; 640x480 shows a
     // smaller image where per-call overhead is a larger share.
@@ -48,4 +61,24 @@ fn bench_swizzle(suite: &mut Suite) {
     }
 }
 
-zenbench::main!(bench_swizzle);
+/// PNM/QOI encode paths: per-pixel push vs row-at-a-time garb converters.
+fn bench_encode_paths(suite: &mut Suite) {
+    for &(label, px) in &[("640x480", 640usize * 480), ("1920x1080", 1920 * 1080)] {
+        let src = buf(px * 4);
+        let src: &'static [u8] = Box::leak(src.into_boxed_slice());
+        suite.compare(format!("bgra_to_rgb/{label}"), |g| {
+            g.throughput(Throughput::Bytes((px * 3) as u64));
+            g.bench("push_was", move |b| {
+                b.iter(move || push_bgra_to_rgb(src, px))
+            });
+            g.bench("garb_now", move |b| {
+                let mut out = vec![0u8; px * 3];
+                b.iter(move || {
+                    garb::bytes::bgra_to_rgb(src, &mut out).unwrap();
+                })
+            });
+        });
+    }
+}
+
+zenbench::main!(bench_swizzle, bench_encode_paths);

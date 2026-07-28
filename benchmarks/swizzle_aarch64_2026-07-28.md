@@ -25,6 +25,25 @@ The SIMD arm reaches 37–45 GB/s against the scalar loop's 4.8–7.4 GB/s. `swa
 3- or 4-byte chunk is a byte-granular permute that LLVM does not turn into a vector shuffle;
 garb's kernels do it with the ISA's permute directly.
 
+## Encode paths (added same day)
+
+The same audit found the *encode* side still doing per-pixel `Vec::push`: PNM's Bgr8/Rgba8/
+Bgra8/Gray8 arms and QOI's BGRA→RGBA accumulator. Those now append a row and convert into the
+slice via `crate::swizzle`, which routes to garb's copy-converters (`rgb_to_bgr`,
+`rgba_to_rgb`, `bgra_to_rgb`) when the `simd` feature is on.
+
+| case | per-pixel `push` (was) | garb converter (now) | speedup |
+|---|---|---|---|
+| bgra→rgb 640×480 | 863.7 µs | 61.5 µs | **14.0×** |
+| bgra→rgb 1920×1080 | 5.8 ms | 0.4 ms | **14.5×** |
+
+PNM converts a row at a time rather than the whole image so the every-16-rows cancellation
+check (`stop.check()`) keeps its granularity — collapsing to one whole-image call would have
+made a large encode uncancellable.
+
+Gray8→RGB uses a plain slice write with no garb path: garb's `gray_to_rgb` lives in its
+`experimental_api` module, and a replicate is a shape LLVM widens on its own.
+
 ## Correctness
 
 `garb::bytes::*_inplace` returns `Err(SizeError::NotPixelAligned)` and performs **no work**
@@ -36,7 +55,9 @@ colours** on any misaligned buffer.
 The new `src/swizzle.rs` helpers fall back to the scalar loop when garb declines, making them
 byte-identical to the original loops at every length, aligned or not, with or without the
 `simd` feature. `swap_rb_matches_scalar_at_every_length` asserts exactly that over lengths
-0..200 (covering every misalignment of both 3 and 4). The QOI and TGA sites were moved onto
+0..200 (covering every misalignment of both 3 and 4), and
+`copy_converters_match_scalar_at_every_length` does the same for the four copy-converters over
+0..60 px. The QOI and TGA sites were moved onto
 the same helpers, which removes that hazard there too.
 
 In practice the buffers at all these sites are `w·h·bpp` and so always aligned — this is a

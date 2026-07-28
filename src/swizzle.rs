@@ -46,9 +46,71 @@ pub(crate) fn swap_rb_4(buf: &mut [u8]) {
     }
 }
 
+/// Copy 3-byte pixels swapping R↔B (BGR→RGB or RGB→BGR).
+#[inline]
+pub(crate) fn bgr_to_rgb_into(src: &[u8], dst: &mut [u8]) {
+    #[cfg(feature = "simd")]
+    {
+        if garb::bytes::rgb_to_bgr(src, dst).is_ok() {
+            return;
+        }
+    }
+    for (px, o) in src.chunks_exact(3).zip(dst.chunks_exact_mut(3)) {
+        o[0] = px[2];
+        o[1] = px[1];
+        o[2] = px[0];
+    }
+}
+
+/// RGBA (4 bpp) → RGB (3 bpp), dropping alpha.
+#[inline]
+pub(crate) fn rgba_to_rgb_into(src: &[u8], dst: &mut [u8]) {
+    #[cfg(feature = "simd")]
+    {
+        if garb::bytes::rgba_to_rgb(src, dst).is_ok() {
+            return;
+        }
+    }
+    for (px, o) in src.chunks_exact(4).zip(dst.chunks_exact_mut(3)) {
+        o[0] = px[0];
+        o[1] = px[1];
+        o[2] = px[2];
+    }
+}
+
+/// BGRA (4 bpp) → RGB (3 bpp), swapping R↔B and dropping alpha.
+#[inline]
+pub(crate) fn bgra_to_rgb_into(src: &[u8], dst: &mut [u8]) {
+    #[cfg(feature = "simd")]
+    {
+        if garb::bytes::bgra_to_rgb(src, dst).is_ok() {
+            return;
+        }
+    }
+    for (px, o) in src.chunks_exact(4).zip(dst.chunks_exact_mut(3)) {
+        o[0] = px[2];
+        o[1] = px[1];
+        o[2] = px[0];
+    }
+}
+
+/// Gray (1 bpp) → RGB (3 bpp), replicating luma.
+///
+/// No garb path: `gray_to_rgb` lives in garb's `experimental_api` module, and
+/// a replicate is a shape LLVM widens on its own anyway.
+#[inline]
+pub(crate) fn gray_to_rgb_into(src: &[u8], dst: &mut [u8]) {
+    for (g, o) in src.iter().zip(dst.chunks_exact_mut(3)) {
+        o[0] = *g;
+        o[1] = *g;
+        o[2] = *g;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::vec;
     use alloc::vec::Vec;
 
     /// The fallback must agree with the SIMD path at every length, including
@@ -74,6 +136,56 @@ mod tests {
                 px.swap(0, 2);
             }
             assert_eq!(a, b, "swap_rb_4 diverged at len {len}");
+        }
+    }
+
+    /// Every copy-converter must agree with its scalar reference at every
+    /// length, including lengths that are not pixel-aligned — the garb path
+    /// declines those and must fall through rather than silently do nothing.
+    #[test]
+    fn copy_converters_match_scalar_at_every_length() {
+        for px in 0..60usize {
+            let src3: Vec<u8> = (0..px * 3).map(|i| (i * 37 % 251) as u8).collect();
+            let src4: Vec<u8> = (0..px * 4).map(|i| (i * 41 % 251) as u8).collect();
+            let src1: Vec<u8> = (0..px).map(|i| (i * 53 % 251) as u8).collect();
+
+            let mut a = vec![0u8; px * 3];
+            bgr_to_rgb_into(&src3, &mut a);
+            let mut b = vec![0u8; px * 3];
+            for (p, o) in src3.chunks_exact(3).zip(b.chunks_exact_mut(3)) {
+                o[0] = p[2];
+                o[1] = p[1];
+                o[2] = p[0];
+            }
+            assert_eq!(a, b, "bgr_to_rgb_into diverged at {px} px");
+
+            let mut a = vec![0u8; px * 3];
+            rgba_to_rgb_into(&src4, &mut a);
+            let mut b = vec![0u8; px * 3];
+            for (p, o) in src4.chunks_exact(4).zip(b.chunks_exact_mut(3)) {
+                o[..3].copy_from_slice(&p[..3]);
+            }
+            assert_eq!(a, b, "rgba_to_rgb_into diverged at {px} px");
+
+            let mut a = vec![0u8; px * 3];
+            bgra_to_rgb_into(&src4, &mut a);
+            let mut b = vec![0u8; px * 3];
+            for (p, o) in src4.chunks_exact(4).zip(b.chunks_exact_mut(3)) {
+                o[0] = p[2];
+                o[1] = p[1];
+                o[2] = p[0];
+            }
+            assert_eq!(a, b, "bgra_to_rgb_into diverged at {px} px");
+
+            let mut a = vec![0u8; px * 3];
+            gray_to_rgb_into(&src1, &mut a);
+            let mut b = vec![0u8; px * 3];
+            for (g, o) in src1.iter().zip(b.chunks_exact_mut(3)) {
+                o[0] = *g;
+                o[1] = *g;
+                o[2] = *g;
+            }
+            assert_eq!(a, b, "gray_to_rgb_into diverged at {px} px");
         }
     }
 

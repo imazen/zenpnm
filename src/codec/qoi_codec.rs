@@ -267,13 +267,12 @@ impl zencodec::encode::Encoder for QoiEncoder {
 
         let bytes = rows.contiguous_bytes();
         if acc.needs_swizzle {
-            // BGRA → RGBA swizzle
-            for pixel in bytes.chunks_exact(4) {
-                acc.data.push(pixel[2]);
-                acc.data.push(pixel[1]);
-                acc.data.push(pixel[0]);
-                acc.data.push(pixel[3]);
-            }
+            // BGRA → RGBA swizzle: append then swap in place, so the swap
+            // goes through garb's SIMD kernel (when the `simd` feature is on)
+            // instead of four `Vec::push` calls per pixel.
+            let s = acc.data.len();
+            acc.data.extend_from_slice(&bytes);
+            crate::swizzle::swap_rb_4(&mut acc.data[s..]);
         } else {
             acc.data.extend_from_slice(&bytes);
         }
