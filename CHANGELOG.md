@@ -6,6 +6,19 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **The `Fuzz regression` CI job could not fail.** It ran
+  `cargo test --test fuzz_regression 2>/dev/null || echo "No regression test
+  found…"` inside an `if [ -d fuzz/regression ]` guard, so a genuinely failing
+  suite, a missing corpus, and a missing harness all reported green.
+  `tests/fuzz_regression.rs` has existed the whole time, so the fallback was
+  masking real failures rather than covering a missing target. The step is now
+  a bare `cargo test --test fuzz_regression`, and the harness asserts at least
+  `MIN_SEEDS` (5) replayable seeds are present — `zenutils_fuzz::RegressionSuite`
+  treats a missing or empty seed dir as a clean no-op, so an emptied or renamed
+  `fuzz/regression/` previously passed without replaying anything.
+  Mutation-verified: removing the corpus and injecting a panic into the `decode`
+  target each fail the test with exit code 101.
+
 - **1/2/4-bpp uncompressed BMP rows were read without the mandatory 4-byte
   row alignment**, silently scrambling every scanline after the first for any
   width whose packed row size isn't a multiple of 4 (issue #20, 2026-08-26
