@@ -892,7 +892,7 @@ impl<'a> BmpDecoderState<'a> {
                                 if row_idx % 16 == 0 {
                                     stop.check().map_err(|r| at!(BitmapError::from(r)))?;
                                 }
-                                for a in out.chunks_exact_mut(4) {
+                                for a in out.as_chunks_mut::<4>().0.iter_mut() {
                                     let mut pixels = self.bytes.read_fixed_bytes_or_zero::<4>();
                                     if !PRESERVE_BGRA {
                                         pixels.swap(0, 2);
@@ -941,7 +941,7 @@ impl<'a> BmpDecoderState<'a> {
                                     if row_idx % 16 == 0 {
                                         stop.check().map_err(|r| at!(BitmapError::from(r)))?;
                                     }
-                                    for raw_pix in out.chunks_exact_mut(4) {
+                                    for raw_pix in out.as_chunks_mut::<4>().0.iter_mut() {
                                         let v = self.bytes.get_u32_le();
                                         conv_function(v, raw_pix);
                                     }
@@ -1035,6 +1035,22 @@ impl<'a> BmpDecoderState<'a> {
                             })
                         })?;
                     let in_width_bytes = self.width_times(usize::from(self.depth))?.div_ceil(8);
+                    // BMP rows are padded to 4-byte boundaries. Reading only
+                    // ceil(w*depth/8) bytes per row (as this branch used to)
+                    // left the padding in the stream, shifting every following
+                    // scanline — silently scrambled output for any width whose
+                    // packed row isn't a multiple of 4 (sweep issue #20). The
+                    // 8/16/24-bit branches already skip the aligned stride.
+                    let in_stride = self
+                        .width_times(usize::from(self.depth))?
+                        .checked_add(31)
+                        .map(|v| (v / 8) & !3usize)
+                        .ok_or_else(|| {
+                            at!(BitmapError::DimensionsTooLarge {
+                                width: self.width as u32,
+                                height: self.height as u32,
+                            })
+                        })?;
                     let mut in_width_buf = vec![0u8; in_width_bytes];
                     let scanline_size = width_bytes * 3;
                     let mut scanline_bytes = vec![0u8; scanline_size];
@@ -1045,6 +1061,7 @@ impl<'a> BmpDecoderState<'a> {
                             stop.check().map_err(|r| at!(BitmapError::from(r)))?;
                         }
                         self.bytes.read_exact_bytes(&mut in_width_buf)?;
+                        let _ = self.bytes.skip(in_stride.saturating_sub(in_width_bytes));
                         expand_bits_to_byte(
                             self.depth as usize,
                             true,
@@ -1104,7 +1121,10 @@ impl<'a> BmpDecoderState<'a> {
                 .take(self.height)
                 .zip(in_bytes.chunks_exact(self.width + pad))
             {
-                for (pal_byte, chunks) in in_stride.iter().zip(out_stride.chunks_exact_mut(4)) {
+                for (pal_byte, chunks) in in_stride
+                    .iter()
+                    .zip(out_stride.as_chunks_mut::<4>().0.iter_mut())
+                {
                     let idx = usize::from(*pal_byte);
                     if validate && idx >= self.palette_numbers {
                         return Err(at!(BitmapError::InvalidData(alloc::format!(
@@ -1125,7 +1145,10 @@ impl<'a> BmpDecoderState<'a> {
                 .take(self.height)
                 .zip(in_bytes.chunks_exact(self.width + pad))
             {
-                for (pal_byte, chunks) in in_stride.iter().zip(out_stride.chunks_exact_mut(3)) {
+                for (pal_byte, chunks) in in_stride
+                    .iter()
+                    .zip(out_stride.as_chunks_mut::<3>().0.iter_mut())
+                {
                     let idx = usize::from(*pal_byte);
                     if validate && idx >= self.palette_numbers {
                         return Err(at!(BitmapError::InvalidData(alloc::format!(
@@ -1153,7 +1176,7 @@ impl<'a> BmpDecoderState<'a> {
 
         if self.is_alpha {
             for out_stride in buf.rchunks_exact_mut(self.width * 4).take(self.height) {
-                for chunks in out_stride.chunks_exact_mut(4) {
+                for chunks in out_stride.as_chunks_mut::<4>().0.iter_mut() {
                     let byte = self.bytes.read_u8();
                     let idx = usize::from(byte);
                     if validate && idx >= self.palette_numbers {
@@ -1172,7 +1195,7 @@ impl<'a> BmpDecoderState<'a> {
             }
         } else {
             for out_stride in buf.rchunks_exact_mut(self.width * 3).take(self.height) {
-                for chunks in out_stride.chunks_exact_mut(3) {
+                for chunks in out_stride.as_chunks_mut::<3>().0.iter_mut() {
                     let byte = self.bytes.read_u8();
                     let idx = usize::from(byte);
                     if validate && idx >= self.palette_numbers {
@@ -1464,7 +1487,9 @@ impl<'a> BmpDecoderState<'a> {
                     }
                     16 => {
                         for chunk in pixels[output_slice_start..]
-                            .chunks_exact_mut(2)
+                            .as_chunks_mut::<2>()
+                            .0
+                            .iter_mut()
                             .take(usize::from(p2))
                         {
                             chunk[0] = self.bytes.read_u8();
@@ -1474,7 +1499,9 @@ impl<'a> BmpDecoderState<'a> {
                     }
                     32 => {
                         for chunk in pixels[output_slice_start..]
-                            .chunks_exact_mut(4)
+                            .as_chunks_mut::<4>()
+                            .0
+                            .iter_mut()
                             .take(usize::from(p2))
                         {
                             chunk[0] = self.bytes.read_u8();
@@ -1533,7 +1560,9 @@ impl<'a> BmpDecoderState<'a> {
                         pix[0] = self.bytes.read_u8();
                         pix[1] = self.bytes.read_u8();
                         for chunk in pixels[output_start..]
-                            .chunks_exact_mut(2)
+                            .as_chunks_mut::<2>()
+                            .0
+                            .iter_mut()
                             .take(usize::from(p1))
                         {
                             chunk[0..2].copy_from_slice(&pix[..2]);
@@ -1545,7 +1574,9 @@ impl<'a> BmpDecoderState<'a> {
                         pix[1] = self.bytes.read_u8();
                         pix[2] = self.bytes.read_u8();
                         for chunk in pixels[output_start..]
-                            .chunks_exact_mut(3)
+                            .as_chunks_mut::<3>()
+                            .0
+                            .iter_mut()
                             .take(usize::from(p1))
                         {
                             chunk[0..3].copy_from_slice(&pix[..3]);
@@ -1558,7 +1589,9 @@ impl<'a> BmpDecoderState<'a> {
                         pix[2] = self.bytes.read_u8();
                         pix[3] = self.bytes.read_u8();
                         for chunk in pixels[output_start..]
-                            .chunks_exact_mut(4)
+                            .as_chunks_mut::<4>()
+                            .0
+                            .iter_mut()
                             .take(usize::from(p1))
                         {
                             chunk[0..4].copy_from_slice(&pix[..4]);

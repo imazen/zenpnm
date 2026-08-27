@@ -90,7 +90,9 @@ fn flat_pfm_roundtrip_grayf32() {
     assert_eq!(decoded.layout, PixelLayout::GrayF32);
     let out_floats: Vec<f32> = decoded
         .pixels()
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
         .collect();
     for (i, (a, b)) in floats.iter().zip(out_floats.iter()).enumerate() {
@@ -106,7 +108,9 @@ fn flat_pfm_roundtrip_rgbf32() {
     let decoded = decode(&encoded, Unstoppable).unwrap();
     let out_floats: Vec<f32> = decoded
         .pixels()
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
         .collect();
     for (i, (a, b)) in floats.iter().zip(out_floats.iter()).enumerate() {
@@ -141,7 +145,7 @@ fn flat_bmp_rgba_roundtrip() {
 fn bgra_pattern(w: usize, h: usize) -> Vec<u8> {
     let mut pixels = vec![0u8; w * h * 4];
     let mut state: u32 = 0xCAFE_BABE;
-    for chunk in pixels.chunks_exact_mut(4) {
+    for chunk in pixels.as_chunks_mut::<4>().0 {
         state ^= state << 13;
         state ^= state >> 17;
         state ^= state << 5;
@@ -157,7 +161,7 @@ fn bgra_pattern(w: usize, h: usize) -> Vec<u8> {
 fn bgr_pattern(w: usize, h: usize) -> Vec<u8> {
     let mut pixels = vec![0u8; w * h * 3];
     let mut state: u32 = 0xBADF00D;
-    for chunk in pixels.chunks_exact_mut(3) {
+    for chunk in pixels.as_chunks_mut::<3>().0 {
         state ^= state << 13;
         state ^= state >> 17;
         state ^= state << 5;

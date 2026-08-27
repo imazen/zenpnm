@@ -27,7 +27,7 @@ pub(crate) fn swap_rb_3(buf: &mut [u8]) {
             return;
         }
     }
-    for px in buf.chunks_exact_mut(3) {
+    for px in buf.as_chunks_mut::<3>().0.iter_mut() {
         px.swap(0, 2);
     }
 }
@@ -41,7 +41,7 @@ pub(crate) fn swap_rb_4(buf: &mut [u8]) {
             return;
         }
     }
-    for px in buf.chunks_exact_mut(4) {
+    for px in buf.as_chunks_mut::<4>().0.iter_mut() {
         px.swap(0, 2);
     }
 }
@@ -55,7 +55,12 @@ pub(crate) fn bgr_to_rgb_into(src: &[u8], dst: &mut [u8]) {
             return;
         }
     }
-    for (px, o) in src.chunks_exact(3).zip(dst.chunks_exact_mut(3)) {
+    for (px, o) in src
+        .as_chunks::<3>()
+        .0
+        .iter()
+        .zip(dst.as_chunks_mut::<3>().0.iter_mut())
+    {
         o[0] = px[2];
         o[1] = px[1];
         o[2] = px[0];
@@ -71,7 +76,12 @@ pub(crate) fn rgba_to_rgb_into(src: &[u8], dst: &mut [u8]) {
             return;
         }
     }
-    for (px, o) in src.chunks_exact(4).zip(dst.chunks_exact_mut(3)) {
+    for (px, o) in src
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(dst.as_chunks_mut::<3>().0.iter_mut())
+    {
         o[0] = px[0];
         o[1] = px[1];
         o[2] = px[2];
@@ -87,7 +97,12 @@ pub(crate) fn bgra_to_rgb_into(src: &[u8], dst: &mut [u8]) {
             return;
         }
     }
-    for (px, o) in src.chunks_exact(4).zip(dst.chunks_exact_mut(3)) {
+    for (px, o) in src
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(dst.as_chunks_mut::<3>().0.iter_mut())
+    {
         o[0] = px[2];
         o[1] = px[1];
         o[2] = px[0];
@@ -100,7 +115,7 @@ pub(crate) fn bgra_to_rgb_into(src: &[u8], dst: &mut [u8]) {
 /// a replicate is a shape LLVM widens on its own anyway.
 #[inline]
 pub(crate) fn gray_to_rgb_into(src: &[u8], dst: &mut [u8]) {
-    for (g, o) in src.iter().zip(dst.chunks_exact_mut(3)) {
+    for (g, o) in src.iter().zip(dst.as_chunks_mut::<3>().0.iter_mut()) {
         o[0] = *g;
         o[1] = *g;
         o[2] = *g;
@@ -124,7 +139,7 @@ mod tests {
             let mut a = src.clone();
             swap_rb_3(&mut a);
             let mut b = src.clone();
-            for px in b.chunks_exact_mut(3) {
+            for px in b.as_chunks_mut::<3>().0.iter_mut() {
                 px.swap(0, 2);
             }
             assert_eq!(a, b, "swap_rb_3 diverged at len {len}");
@@ -132,7 +147,7 @@ mod tests {
             let mut a = src.clone();
             swap_rb_4(&mut a);
             let mut b = src.clone();
-            for px in b.chunks_exact_mut(4) {
+            for px in b.as_chunks_mut::<4>().0.iter_mut() {
                 px.swap(0, 2);
             }
             assert_eq!(a, b, "swap_rb_4 diverged at len {len}");
@@ -152,7 +167,12 @@ mod tests {
             let mut a = vec![0u8; px * 3];
             bgr_to_rgb_into(&src3, &mut a);
             let mut b = vec![0u8; px * 3];
-            for (p, o) in src3.chunks_exact(3).zip(b.chunks_exact_mut(3)) {
+            for (p, o) in src3
+                .as_chunks::<3>()
+                .0
+                .iter()
+                .zip(b.as_chunks_mut::<3>().0.iter_mut())
+            {
                 o[0] = p[2];
                 o[1] = p[1];
                 o[2] = p[0];
@@ -162,7 +182,12 @@ mod tests {
             let mut a = vec![0u8; px * 3];
             rgba_to_rgb_into(&src4, &mut a);
             let mut b = vec![0u8; px * 3];
-            for (p, o) in src4.chunks_exact(4).zip(b.chunks_exact_mut(3)) {
+            for (p, o) in src4
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .zip(b.as_chunks_mut::<3>().0.iter_mut())
+            {
                 o[..3].copy_from_slice(&p[..3]);
             }
             assert_eq!(a, b, "rgba_to_rgb_into diverged at {px} px");
@@ -170,7 +195,12 @@ mod tests {
             let mut a = vec![0u8; px * 3];
             bgra_to_rgb_into(&src4, &mut a);
             let mut b = vec![0u8; px * 3];
-            for (p, o) in src4.chunks_exact(4).zip(b.chunks_exact_mut(3)) {
+            for (p, o) in src4
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .zip(b.as_chunks_mut::<3>().0.iter_mut())
+            {
                 o[0] = p[2];
                 o[1] = p[1];
                 o[2] = p[0];
@@ -180,7 +210,7 @@ mod tests {
             let mut a = vec![0u8; px * 3];
             gray_to_rgb_into(&src1, &mut a);
             let mut b = vec![0u8; px * 3];
-            for (g, o) in src1.iter().zip(b.chunks_exact_mut(3)) {
+            for (g, o) in src1.iter().zip(b.as_chunks_mut::<3>().0.iter_mut()) {
                 o[0] = *g;
                 o[1] = *g;
                 o[2] = *g;

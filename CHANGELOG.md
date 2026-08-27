@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **1/2/4-bpp uncompressed BMP rows were read without the mandatory 4-byte
+  row alignment**, silently scrambling every scanline after the first for any
+  width whose packed row size isn't a multiple of 4 (issue #20, 2026-08-26
+  ultracode sweep, adversarially verified — the 8/16/24-bit branches already
+  skipped the aligned stride; the standard pal1/pal4 fixtures are 127 px wide
+  and accidentally aligned, which is why they never caught it). The sub-byte
+  branch now skips to the aligned stride per row. Regression: hand-crafted
+  9x3 1-bpp fixture with junk padding bytes; mutation-verified (fails with
+  the skip removed). Also cleared the new clippy `-D warnings` wall
+  (chunks_exact → as_chunks, expand_bits rewritten on `as_chunks_mut`).
+
 ### Added
 
 - Implement `zencodec::CategorizedError` for `BitmapError` (the origin-first

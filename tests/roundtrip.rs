@@ -767,7 +767,9 @@ fn pfm_big_endian_scale_applies_magnitude() {
     assert_eq!(d.layout, PixelLayout::RgbF32);
     let px = d.pixels();
     let got: Vec<f32> = px
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .map(|c| f32::from_ne_bytes([c[0], c[1], c[2], c[3]]))
         .collect();
     assert_eq!(
@@ -1913,7 +1915,9 @@ fn make_rgbf32_pixels(values: &[(f32, f32, f32)]) -> Vec<u8> {
 /// Helper: read f32 RGB triples from pixel bytes.
 #[cfg(feature = "hdr")]
 fn read_rgbf32_pixels(data: &[u8]) -> Vec<(f32, f32, f32)> {
-    data.chunks_exact(12)
+    data.as_chunks::<12>()
+        .0
+        .iter()
         .map(|chunk| {
             let r = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
             let g = f32::from_le_bytes([chunk[4], chunk[5], chunk[6], chunk[7]]);

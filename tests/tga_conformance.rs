@@ -267,7 +267,7 @@ fn type10_rle_max_run() {
     let data = build_simple_tga(10, 128, 1, 24, 0x20, &pixel_data);
     let decoded = decode_tga(&data, Unstoppable).unwrap();
     assert_eq!(decoded.width, 128);
-    for chunk in decoded.pixels().chunks_exact(3) {
+    for chunk in decoded.pixels().as_chunks::<3>().0 {
         assert_eq!(chunk, &[255, 0, 0]);
     }
 }

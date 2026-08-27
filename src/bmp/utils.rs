@@ -19,13 +19,13 @@ pub(crate) fn expand_bits_to_byte(depth: usize, plte_present: bool, input: &[u8]
     };
 
     if depth == 1 {
+        let (chunks, rem) = out.as_chunks_mut::<8>();
         let mut in_iter = input.iter();
-        let mut out_iter = out.chunks_exact_mut(8);
 
-        (&mut out_iter)
+        chunks
+            .iter_mut()
             .zip(&mut in_iter)
-            .for_each(|(out_vals, in_val)| {
-                let cur: &mut [u8; 8] = out_vals.try_into().unwrap();
+            .for_each(|(cur, in_val)| {
                 cur[0] = scale.wrapping_mul((in_val >> 7) & 0x01);
                 cur[1] = scale.wrapping_mul((in_val >> 6) & 0x01);
                 cur[2] = scale.wrapping_mul((in_val >> 5) & 0x01);
@@ -37,20 +37,19 @@ pub(crate) fn expand_bits_to_byte(depth: usize, plte_present: bool, input: &[u8]
             });
 
         if let Some(in_val) = in_iter.next() {
-            let remainder_iter = out_iter.into_remainder().iter_mut();
-            remainder_iter.enumerate().for_each(|(pos, out_val)| {
+            rem.iter_mut().enumerate().for_each(|(pos, out_val)| {
                 let shift = 7_usize.wrapping_sub(pos);
                 *out_val = scale.wrapping_mul((in_val >> shift) & 0x01);
             });
         }
     } else if depth == 2 {
+        let (chunks, rem) = out.as_chunks_mut::<4>();
         let mut in_iter = input.iter();
-        let mut out_iter = out.chunks_exact_mut(4);
 
-        (&mut out_iter)
+        chunks
+            .iter_mut()
             .zip(&mut in_iter)
-            .for_each(|(out_vals, in_val)| {
-                let cur: &mut [u8; 4] = out_vals.try_into().unwrap();
+            .for_each(|(cur, in_val)| {
                 cur[0] = scale.wrapping_mul((in_val >> 6) & 0x03);
                 cur[1] = scale.wrapping_mul((in_val >> 4) & 0x03);
                 cur[2] = scale.wrapping_mul((in_val >> 2) & 0x03);
@@ -58,27 +57,25 @@ pub(crate) fn expand_bits_to_byte(depth: usize, plte_present: bool, input: &[u8]
             });
 
         if let Some(in_val) = in_iter.next() {
-            let remainder_iter = out_iter.into_remainder().iter_mut();
-            remainder_iter.enumerate().for_each(|(pos, out_val)| {
+            rem.iter_mut().enumerate().for_each(|(pos, out_val)| {
                 let shift = 6_usize.wrapping_sub(pos * 2);
                 *out_val = scale.wrapping_mul((in_val >> shift) & 0x03);
             });
         }
     } else if depth == 4 {
+        let (chunks, rem) = out.as_chunks_mut::<2>();
         let mut in_iter = input.iter();
-        let mut out_iter = out.chunks_exact_mut(2);
 
-        (&mut out_iter)
+        chunks
+            .iter_mut()
             .zip(&mut in_iter)
-            .for_each(|(out_vals, in_val)| {
-                let cur: &mut [u8; 2] = out_vals.try_into().unwrap();
+            .for_each(|(cur, in_val)| {
                 cur[0] = scale.wrapping_mul((in_val >> 4) & 0x0f);
                 cur[1] = scale.wrapping_mul(in_val & 0x0f);
             });
 
         if let Some(in_val) = in_iter.next() {
-            let remainder_iter = out_iter.into_remainder().iter_mut();
-            remainder_iter.enumerate().for_each(|(pos, out_val)| {
+            rem.iter_mut().enumerate().for_each(|(pos, out_val)| {
                 let shift = 4_usize.wrapping_sub(pos * 4);
                 *out_val = scale.wrapping_mul((in_val >> shift) & 0x0f);
             });

@@ -59,7 +59,7 @@ pub(crate) fn encode_farbfeld(
                 if row_idx % 16 == 0 {
                     stop.check().map_err(|r| at!(BitmapError::from(r)))?;
                 }
-                for pair in row.chunks_exact(2) {
+                for pair in row.as_chunks::<2>().0.iter() {
                     let val = u16::from_ne_bytes([pair[0], pair[1]]);
                     out.extend_from_slice(&val.to_be_bytes());
                 }
@@ -83,7 +83,7 @@ pub(crate) fn encode_farbfeld(
                 if row_idx % 16 == 0 {
                     stop.check().map_err(|r| at!(BitmapError::from(r)))?;
                 }
-                for pixel in row.chunks_exact(3) {
+                for pixel in row.as_chunks::<3>().0.iter() {
                     let r: u16 = pixel[0] as u16 * 257;
                     let g: u16 = pixel[1] as u16 * 257;
                     let b: u16 = pixel[2] as u16 * 257;
@@ -100,7 +100,7 @@ pub(crate) fn encode_farbfeld(
                 if row_idx % 16 == 0 {
                     stop.check().map_err(|r| at!(BitmapError::from(r)))?;
                 }
-                for pixel in row.chunks_exact(4) {
+                for pixel in row.as_chunks::<4>().0.iter() {
                     let r: u16 = pixel[2] as u16 * 257;
                     let g: u16 = pixel[1] as u16 * 257;
                     let b: u16 = pixel[0] as u16 * 257;
@@ -118,7 +118,7 @@ pub(crate) fn encode_farbfeld(
                 if row_idx % 16 == 0 {
                     stop.check().map_err(|r| at!(BitmapError::from(r)))?;
                 }
-                for pixel in row.chunks_exact(4) {
+                for pixel in row.as_chunks::<4>().0.iter() {
                     let r: u16 = pixel[2] as u16 * 257;
                     let g: u16 = pixel[1] as u16 * 257;
                     let b: u16 = pixel[0] as u16 * 257;
@@ -135,7 +135,7 @@ pub(crate) fn encode_farbfeld(
                 if row_idx % 16 == 0 {
                     stop.check().map_err(|r| at!(BitmapError::from(r)))?;
                 }
-                for pixel in row.chunks_exact(3) {
+                for pixel in row.as_chunks::<3>().0.iter() {
                     let r: u16 = pixel[2] as u16 * 257;
                     let g: u16 = pixel[1] as u16 * 257;
                     let b: u16 = pixel[0] as u16 * 257;

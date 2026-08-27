@@ -258,7 +258,7 @@ pub(crate) fn rgbe_scanline_to_f32(rgbe: &[u8], out: &mut [u8]) {
     debug_assert_eq!(out.len(), pixel_count * 12);
 
     let mut out_pos = 0;
-    for px in rgbe.chunks_exact(4) {
+    for px in rgbe.as_chunks::<4>().0.iter() {
         let (rf, gf, bf) = rgbe_to_f32(px[0], px[1], px[2], px[3]);
         out[out_pos..out_pos + 4].copy_from_slice(&rf.to_le_bytes());
         out[out_pos + 4..out_pos + 8].copy_from_slice(&gf.to_le_bytes());

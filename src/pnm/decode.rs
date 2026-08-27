@@ -342,7 +342,12 @@ pub(crate) fn decode_integer_transform(
                 // decode; a no-op on big-endian hosts, a byte-swap on LE.
                 let mut out = alloc_util::vec_with_capacity(alloc_pref, true, expected_src)?;
                 let stop_interval = w.saturating_mul(depth).saturating_mul(16).max(1);
-                for (i, pair) in pixel_data[..expected_src].chunks_exact(2).enumerate() {
+                for (i, pair) in pixel_data[..expected_src]
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .enumerate()
+                {
                     if i % stop_interval == 0 {
                         stop.check()
                             .map_err(|r| whereat::at!(BitmapError::from(r)))?;

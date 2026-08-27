@@ -62,7 +62,7 @@ pub(crate) fn encode_qoi(
                 .map_err(|r| whereat::at!(BitmapError::from(r)))?;
             let mut rgba = pixels[..expected].to_vec();
             crate::swizzle::swap_rb_4(&mut rgba);
-            for pixel in rgba.chunks_exact_mut(4) {
+            for pixel in rgba.as_chunks_mut::<4>().0.iter_mut() {
                 pixel[3] = 255;
             }
             (Some(rgba), rapid_qoi::Colors::SrgbLinA)
