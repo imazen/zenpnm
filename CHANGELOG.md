@@ -20,6 +20,25 @@ All notable changes to this project will be documented in this file.
   would carry two `zencodec` copies. The standing current-plus-next rule is
   documented in the zencodec repo's `CLAUDE.md`.
 
+- **Third-party lockfile refresh — 22 packages, no manifest change needed.**
+  `Cargo.lock` only. Run as `cargo update -p …` naming each of the 84
+  third-party packages individually, with every zen-family crate
+  (`zencodec`, `zencodec-testkit`, `zenpixels`, `zenpixels-convert`, `zenbench`,
+  `zenutils-fuzz`, `codec-corpus`, `enough`, `whereat`, `archmage`, `garb`)
+  excluded, so nothing in the sibling graph moved. Notable: `thiserror`
+  2.0.18 → 2.0.20, `imgref` 1.12.2 → 1.12.3, `bytemuck` 1.25.0 → 1.25.2,
+  `bytemuck_derive` 1.10.2 → 1.12.0, `libc` 0.2.186 → 0.2.189, `memchr`
+  2.8.2 → 2.8.3, `serde` 1.0.228 → 1.0.229, `bitflags` 2.13.0 → 2.13.1, plus
+  `clap`/`proc-macro2`/`quote`/`syn`/`serde_json`/`zmij`/`libredox`/`rustversion`.
+  Every direct third-party requirement (`imgref "1.12"`, `rgb "0.8"`,
+  `thiserror "2.0"`) is a caret range that already admits the newest release,
+  so no manifest edit was required — `cargo outdated --root-deps-only` reports
+  only zen-family crates behind, and those are deliberately out of scope here.
+  All 417 tests pass, `cargo clippy --all-targets -- -D warnings` (the CI
+  invocation) is clean, `cargo fmt --all --check` is clean, the committed
+  public-API snapshot is unchanged, and `cargo hack check --rust-version`
+  still passes at the declared MSRV of 1.93.
+
 ### Fixed
 
 - **Pushes to `main` now cancel their superseded CI runs.** `ci.yml` keyed its
