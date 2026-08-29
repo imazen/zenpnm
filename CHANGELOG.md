@@ -39,6 +39,13 @@ All notable changes to this project will be documented in this file.
   public-API snapshot is unchanged, and `cargo hack check --rust-version`
   still passes at the declared MSRV of 1.93.
 
+  The two **nested** tracked lockfiles were refreshed under the same
+  constraint: `fuzz/Cargo.lock` (14 packages — `getrandom` 0.3.4 → 0.4.3,
+  `libc` 0.2.189, `cc` 1.4.4) and `apidoc/Cargo.lock` (14 packages —
+  `rustdoc-types` 0.57.4, `serde` 1.0.229, `syn` 3.0.4). Both still
+  `cargo check --all-targets` clean, and the committed public-API snapshot is
+  still current under the newer `rustdoc-types`/`public-api`.
+
 ### Fixed
 
 - **Pushes to `main` now cancel their superseded CI runs.** `ci.yml` keyed its
