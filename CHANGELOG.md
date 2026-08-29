@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **`zencodec` / `zencodec-testkit` / `zenpixels` / `zenpixels-convert`
+  requirements now span the published minor and the next one**: `zencodec
+  >=0.1.26, <0.3.0`, `zencodec-testkit >=0.1.0, <0.3.0`, `zenpixels >=0.2.13,
+  <0.4.0`, `zenpixels-convert >=0.2.13, <0.4.0`. For a `0.x` crate Cargo treats
+  the minor as the major, so the previous plain requirements meant `^0.1.26` =
+  `>=0.1.26, <0.2.0` and a `zencodec 0.2.0` release would have been invisible
+  until this manifest was hand-edited. Floors are unchanged and nothing newer is
+  published, so resolution is identical (`cargo metadata --all-features`: one
+  copy of each). **Caveat now recorded next to the dev-dep:** the *published*
+  `zencodec-testkit 0.1.0` still declares `zencodec ^0.1.26`, so it must
+  republish with the widened range before `zencodec 0.2.0` ships or this graph
+  would carry two `zencodec` copies. The standing current-plus-next rule is
+  documented in the zencodec repo's `CLAUDE.md`.
+
 ### Fixed
 
 - **Pushes to `main` now cancel their superseded CI runs.** `ci.yml` keyed its

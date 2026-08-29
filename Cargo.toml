@@ -24,14 +24,14 @@ imgref = { version = "1.12", default-features = false, optional = true }
 rgb = { version = "0.8", default-features = false, features = ["as-bytes"], optional = true }
 thiserror = { version = "2.0", default-features = false }
 whereat = { version = "0.1.5", default-features = false }
-zencodec = { version = "0.1.26", optional = true }
+zencodec = { version = ">=0.1.26, <0.3.0", optional = true }
 # zennode is not yet published; uncomment when it's on crates.io
 # zennode = { path = "../zennode/zennode", default-features = false, features = ["derive"], optional = true }
-zenpixels = { version = "0.2.13", default-features = false, features = ["imgref"], optional = true }
+zenpixels = { version = ">=0.2.13, <0.4.0", default-features = false, features = ["imgref"], optional = true }
 # Load-bearing descriptor narrowing for the zencodec encode path — raw
 # formats pay full price for dead lanes, so the reduction wins more here
 # than for any entropy-coded codec.
-zenpixels-convert = { version = "0.2.13", default-features = false, optional = true }
+zenpixels-convert = { version = ">=0.2.13, <0.4.0", default-features = false, optional = true }
 # SIMD acceleration
 archmage = { version = "0.9.15", default-features = false, optional = true }
 garb = { version = "0.2.5", default-features = false, optional = true }
@@ -41,9 +41,13 @@ archmage = { version = "0.9.14", features = ["std"] }
 zenutils-fuzz = "0.1.0"
 zenbench = "0.1.4"
 # zencodec conformance harness. Provides check_decode_truncation_series
-# (EOF/truncation). Its zencodec requirement (^0.1.26) unifies with the
-# [dependencies] entry above on one crates.io zencodec.
-zencodec-testkit = "0.1.0"
+# (EOF/truncation). The PUBLISHED testkit 0.1.0 declares `zencodec ^0.1.26`,
+# which unifies with the [dependencies] entry above on one crates.io zencodec
+# today — but that caret will NOT admit zencodec 0.2.0, so testkit must
+# republish with its own widened `>=0.1.26, <0.3.0` (already in its manifest,
+# zencodec repo `4391021`) before 0.2.0 ships, or this dev-dep graph gains a
+# second zencodec copy.
+zencodec-testkit = ">=0.1.0, <0.3.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 codec-corpus = "1"
