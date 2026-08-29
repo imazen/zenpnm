@@ -6,6 +6,14 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **CI's `Clippy` job was red since at least 2026-08-27**: `swap_rb_3` /
+  `swap_rb_4` are called only from the `bmp`, `tga` and `qoi` modules, all of
+  which are off at the default feature set (`default = []`), so
+  `cargo clippy --all-targets -- -D warnings` failed on `dead_code`. Both are
+  now gated on `any(feature = "bmp", feature = "tga", feature = "qoi")`, as are
+  the two tests that exercise them — CI's `cargo test --features bmp` leg keeps
+  those running, so no coverage is lost. No behaviour change.
+
 - **The `Fuzz regression` CI job could not fail.** It ran
   `cargo test --test fuzz_regression 2>/dev/null || echo "No regression test
   found…"` inside an `if [ -d fuzz/regression ]` guard, so a genuinely failing

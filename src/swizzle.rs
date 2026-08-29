@@ -19,6 +19,12 @@
 //! or not, with or without the `simd` feature.
 
 /// Swap R↔B for 3-byte pixels (RGB↔BGR), in place.
+///
+/// Only BMP, TGA and QOI swizzle in place; PNM/farbfeld (the always-compiled
+/// formats) use the copy converters below. Without this gate the function is
+/// dead code at the default feature set (`default = []`), which `cargo clippy
+/// --all-targets -- -D warnings` rejects.
+#[cfg(any(feature = "bmp", feature = "tga", feature = "qoi"))]
 #[inline]
 pub(crate) fn swap_rb_3(buf: &mut [u8]) {
     #[cfg(feature = "simd")]
@@ -33,6 +39,9 @@ pub(crate) fn swap_rb_3(buf: &mut [u8]) {
 }
 
 /// Swap R↔B for 4-byte pixels (RGBA↔BGRA), in place. Alpha is untouched.
+///
+/// Gated for the same reason as [`swap_rb_3`].
+#[cfg(any(feature = "bmp", feature = "tga", feature = "qoi"))]
 #[inline]
 pub(crate) fn swap_rb_4(buf: &mut [u8]) {
     #[cfg(feature = "simd")]
@@ -131,6 +140,10 @@ mod tests {
     /// The fallback must agree with the SIMD path at every length, including
     /// lengths that are NOT pixel-aligned — that misalignment is precisely
     /// where `let _ = garb::…` used to silently do nothing.
+    ///
+    /// Gated with the functions under test; CI's `cargo test --features bmp`
+    /// leg keeps it running.
+    #[cfg(any(feature = "bmp", feature = "tga", feature = "qoi"))]
     #[test]
     fn swap_rb_matches_scalar_at_every_length() {
         for len in 0..200usize {
@@ -219,6 +232,9 @@ mod tests {
         }
     }
 
+    /// Gated with the functions under test; CI's `cargo test --features bmp`
+    /// leg keeps it running.
+    #[cfg(any(feature = "bmp", feature = "tga", feature = "qoi"))]
     #[test]
     fn swap_rb_is_an_involution() {
         let src: Vec<u8> = (0..96u8).collect();
