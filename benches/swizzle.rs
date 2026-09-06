@@ -61,20 +61,25 @@ fn bench_swizzle(suite: &mut Suite) {
     }
 }
 
-/// PNM/QOI encode paths: per-pixel push vs row-at-a-time garb converters.
+/// PNM/QOI encode paths: both arms allocate and return their output buffer.
 fn bench_encode_paths(suite: &mut Suite) {
     for &(label, px) in &[("640x480", 640usize * 480), ("1920x1080", 1920 * 1080)] {
         let src = buf(px * 4);
         let src: &'static [u8] = Box::leak(src.into_boxed_slice());
+        let expected = push_bgra_to_rgb(src, px);
+        let mut actual = vec![0; px * 3];
+        garb::bytes::bgra_to_rgb(src, &mut actual).unwrap();
+        assert_eq!(expected, actual);
         suite.compare(format!("bgra_to_rgb/{label}"), |g| {
             g.throughput(Throughput::Bytes((px * 3) as u64));
             g.bench("push_was", move |b| {
                 b.iter(move || push_bgra_to_rgb(src, px))
             });
             g.bench("garb_now", move |b| {
-                let mut out = vec![0u8; px * 3];
                 b.iter(move || {
+                    let mut out = vec![0u8; px * 3];
                     garb::bytes::bgra_to_rgb(src, &mut out).unwrap();
+                    out
                 })
             });
         });

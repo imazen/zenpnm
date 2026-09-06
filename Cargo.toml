@@ -80,7 +80,7 @@ all = ["bmp", "qoi", "tga", "hdr", "simd", "rgb", "imgref"]
 [[bench]]
 name = "codecs"
 harness = false
-required-features = ["bmp", "qoi", "tga", "hdr"]
+required-features = ["bmp", "qoi", "tga", "hdr", "simd"]
 
 
 [[bench]]
