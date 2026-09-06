@@ -65,6 +65,22 @@ fn encode_24bit(
     let mut out = Vec::with_capacity(file_size);
     write_bmp_header(&mut out, file_size, pixel_data_size, width, height, 24);
 
+    if layout == PixelLayout::Rgb8 {
+        out.resize(file_size, 0);
+        for row in (0..h).rev() {
+            if row % 16 == 0 {
+                stop.check().map_err(|r| at!(BitmapError::from(r)))?;
+            }
+            let src_start = row * w * 3;
+            let dst_start = 54 + (h - 1 - row) * row_stride;
+            crate::swizzle::bgr_to_rgb_into(
+                &pixels[src_start..src_start + w * 3],
+                &mut out[dst_start..dst_start + w * 3],
+            );
+        }
+        return Ok(out);
+    }
+
     let pad_bytes = row_stride - w * 3;
     let is_bgr_native = matches!(layout, PixelLayout::Bgr8);
     let src_bpp = layout.bytes_per_pixel();
@@ -297,4 +313,45 @@ fn get_rgba(pixels: &[u8], idx: usize, layout: PixelLayout) -> crate::Result<(u8
             )));
         }
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rgb8_rows_match_pixelwise_bmp_with_padding() {
+        for width in 1..=65u32 {
+            for height in [1u32, 3, 17] {
+                let pixels: Vec<u8> = (0..width as usize * height as usize * 3)
+                    .map(|i| (i.wrapping_mul(37) ^ (i >> 5)) as u8)
+                    .collect();
+                let actual = encode_bmp(
+                    &pixels,
+                    width,
+                    height,
+                    PixelLayout::Rgb8,
+                    false,
+                    &enough::Unstoppable,
+                )
+                .unwrap();
+                let stride = (width as usize * 3 + 3) & !3;
+                let size = stride * height as usize;
+                let mut expected = Vec::new();
+                write_bmp_header(&mut expected, size + 54, size, width, height, 24);
+                for row in (0..height as usize).rev() {
+                    for col in 0..width as usize {
+                        let offset = (row * width as usize + col) * 3;
+                        expected.extend_from_slice(&[
+                            pixels[offset + 2],
+                            pixels[offset + 1],
+                            pixels[offset],
+                        ]);
+                    }
+                    expected.extend(core::iter::repeat_n(0, stride - width as usize * 3));
+                }
+                assert_eq!(actual, expected, "{width}x{height}");
+            }
+        }
+    }
 }

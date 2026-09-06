@@ -1,0 +1,308 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.24
+   Compiling libc v0.2.189
+   Compiling bitflags v2.13.1
+   Compiling rustix v1.1.4
+   Compiling serde_core v1.0.229
+   Compiling libm v0.2.16
+   Compiling autocfg v1.5.1
+   Compiling safe_unaligned_simd v0.2.5
+   Compiling rustversion v1.0.23
+   Compiling syn v3.0.4
+   Compiling syn v2.0.119
+   Compiling errno v0.3.14
+   Compiling bytemuck_derive v1.12.0
+   Compiling archmage-macros v0.9.26
+   Compiling num-traits v0.2.19
+   Compiling bytemuck v1.25.2
+   Compiling utf8parse v0.2.2
+   Compiling zmij v1.0.23
+   Compiling archmage v0.9.26
+   Compiling imgref v1.12.3
+   Compiling whereat v0.1.5
+   Compiling paste v1.0.15
+   Compiling rgb v0.8.53
+   Compiling zenpixels v0.2.14
+   Compiling anstyle-parse v1.0.0
+   Compiling enough v0.4.4
+   Compiling serde_json v1.0.151
+   Compiling anstyle-query v1.1.5
+   Compiling serde v1.0.229
+   Compiling memchr v2.8.3
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling anstyle v1.0.14
+   Compiling colorchoice v1.0.5
+   Compiling anstream v1.0.0
+   Compiling almost-enough v0.4.4
+   Compiling magetypes v0.9.26
+   Compiling serde_derive v1.0.229
+   Compiling objc2-core-foundation v0.3.2
+   Compiling strsim v0.11.1
+   Compiling itoa v1.0.18
+   Compiling clap_lex v1.1.0
+   Compiling thiserror v2.0.20
+   Compiling heck v0.5.0
+   Compiling option-ext v0.2.0
+   Compiling dirs-sys v0.5.0
+   Compiling clap_derive v4.6.4
+   Compiling clap_builder v4.6.6
+   Compiling objc2-io-kit v0.3.2
+   Compiling garb v0.2.8
+   Compiling zencodec v0.1.26
+   Compiling thiserror-impl v2.0.20
+   Compiling linear-srgb v0.6.12
+   Compiling once_cell v1.21.4
+   Compiling cfg-if v1.0.4
+   Compiling fd-lock v4.0.4
+   Compiling sysinfo v0.36.1
+   Compiling clap v4.6.6
+   Compiling dirs v6.0.0
+   Compiling fs4 v1.1.0
+   Compiling terminal_size v0.4.4
+   Compiling codec-corpus v1.1.0
+   Compiling zencodec-testkit v0.1.0
+   Compiling zenbench v0.1.8
+   Compiling zenutils-fuzz v0.1.0
+   Compiling zenpixels-convert v0.2.13
+   Compiling zenbitmaps v0.2.0 (/Users/lilith/work/zen/zenbitmaps)
+    Finished `bench` profile [optimized] target(s) in 8.91s
+     Running benches/codecs.rs (target/release/deps/codecs-48ea24f1417bef0d)
+[zenbench] calibration: int=0.27ns/iter mem_bw=117.8GiB/s mem_lat=7.4ns
+[zenbench] timer resolution: 41ns, loop overhead: 0.22ns/iter, TSC: 1.000 ticks/ns (invariant)
+[zenbench] results → /Users/lilith/tmp/zenbench/zenbench-1788736625-4328.txt
+
+═══════════════════════════════════════════════════════════════
+  zenbench  1788736625-4328
+  git: 0b19c3e259691a7a03a642707b99fb38ba7a65e2
+═══════════════════════════════════════════════════════════════
+
+  ppm/decode/64  200 rounds × 35K calls
+              mean ±mad ns  95% CI vs base   ops/s
+  ├─ native   92.5 ±12.9ns  [90.1–94.9]ns    44.3G
+  ╰─ scalar   92.1 ±12.5ns  [-1.7%–+1.5%]    44.5G [1]
+
+  scalar  ██████████████████████████████████████████████████████████ 44.5 Gops/s
+  native  ██████████████████████████████████████████████████████████ 44.3 Gops/s
+  [1] CI crosses zero
+
+  ppm/encode/64  200 rounds × 4K calls
+             mean ±mad ns  95% CI vs base   ops/s
+  ├─ native   539 ±54ns  [527–551]ns      7.59G
+  ╰─ scalar   544 ±53ns  [-0.8%–+1.0%]    7.52G [1]
+
+  native  ██████████████████████████████████████████████████████████ 7.59 Gops/s
+  scalar  █████████████████████████████████████████████████████████ 7.52 Gops/s
+  [1] CI crosses zero
+
+  farbfeld/decode/64  200 rounds × 765 calls
+             mean ±mad µs  95% CI vs base   ops/s
+  ├─ native   4.5 ±0.6µs  [4.3–4.6]µs      916M [1]
+  ╰─ scalar   4.5 ±0.6µs  [-0.5%–+2.2%]    908M [2] [3]
+
+  native  ███████████████████████████████████████████████████████████ 916 Mops/s
+  scalar  ██████████████████████████████████████████████████████████ 908 Mops/s
+  [1] CV=20%
+  [2] CI crosses zero
+  [3] CV=20%
+
+  farbfeld/encode/64  200 rounds × 135 calls
+              mean ±mad µs  95% CI vs base    ops/s
+  ├─ native   32.5 ±4.4µs  [31.3–33.6]µs     126M [1]
+  ╰─ scalar   32.6 ±4.1µs  [-2.3%–+2.5%]     126M [2] [3]
+
+  native  ███████████████████████████████████████████████████████████ 126 Mops/s
+  scalar  ███████████████████████████████████████████████████████████ 126 Mops/s
+  [1] CV=26%
+  [2] CI crosses zero
+  [3] CV=26%
+
+  bmp/decode/64  30 rounds × 627 calls
+             mean ±mad µs  95% CI vs base       ops/s
+  ├─ native   2.4 ±0.3µs  [2.3–2.6]µs          1.69G
+  ╰─ scalar   5.5 ±0.3µs  [+120.4%–+130.0%]     744M
+
+  native  ██████████████████████████████████████████████████████████ 1.69 Gops/s
+  scalar  ██████████████████████████ 744 Mops/s
+
+  bmp/encode/64  200 rounds × 130 calls
+              mean ±mad µs  95% CI vs base    ops/s
+  ├─ native   24.6 ±3.1µs  [23.8–25.3]µs     167M [1]
+  ╰─ scalar   24.4 ±3.3µs  [-0.8%–+1.4%]     168M [2] [3]
+
+  scalar  ███████████████████████████████████████████████████████████ 168 Mops/s
+  native  ███████████████████████████████████████████████████████████ 167 Mops/s
+  [1] CV=22%
+  [2] CI crosses zero
+  [3] CV=21%
+
+  qoi/decode/64  200 rounds × 165 calls
+              mean ±mad µs  95% CI vs base    ops/s
+  ├─ native   19.0 ±1.6µs  [18.7–19.4]µs     215M
+  ╰─ scalar   19.0 ±2.1µs  [-1.5%–+0.5%]     215M [1]
+
+  scalar  ███████████████████████████████████████████████████████████ 215 Mops/s
+  native  ███████████████████████████████████████████████████████████ 215 Mops/s
+  [1] CI crosses zero
+
+  qoi/encode/64  200 rounds × 130 calls
+              mean ±mad µs  95% CI vs base    ops/s
+  ├─ native   26.7 ±3.7µs  [26.0–27.4]µs     153M
+  ╰─ scalar   26.9 ±3.7µs  [-0.2%–+2.3%]     152M [1] [2]
+
+  native  ███████████████████████████████████████████████████████████ 153 Mops/s
+  scalar  ███████████████████████████████████████████████████████████ 152 Mops/s
+  [1] CI crosses zero
+  [2] CV=21%
+
+  tga/decode/64  50 rounds × 672 calls
+             mean ±mad µs  95% CI vs base       ops/s
+  ├─ native   2.1 ±0.4µs  [1.9–2.3]µs          1.93G [1]
+  ╰─ scalar   4.8 ±0.9µs  [+116.2%–+140.3%]     845M [2] [3]
+
+  native  ██████████████████████████████████████████████████████████ 1.93 Gops/s
+  scalar  █████████████████████████ 845 Mops/s
+  [1] CV=30%
+  [2] drift r=0.53 — later rounds slower
+  [3] CV=32%
+
+  tga/encode/64  30 rounds × 778 calls
+             mean ±mad µs  95% CI vs base       ops/s
+  ├─ native   1.5 ±0.2µs  [1.4–1.6]µs          2.71G [1]
+  ╰─ scalar   4.5 ±0.6µs  [+186.9%–+204.9%]     906M [2]
+
+  native  ██████████████████████████████████████████████████████████ 2.71 Gops/s
+  scalar  ███████████████████ 906 Mops/s
+  [1] CV=25%
+  [2] CV=25%
+
+  hdr/decode/64  200 rounds × 124 calls
+              mean ±mad µs  95% CI vs base    ops/s
+  ├─ native   23.8 ±2.9µs  [23.2–24.3]µs     172M
+  ╰─ scalar   23.9 ±2.6µs  [-1.5%–+0.7%]     172M [1]
+
+  native  ███████████████████████████████████████████████████████████ 172 Mops/s
+  scalar  ███████████████████████████████████████████████████████████ 172 Mops/s
+  [1] CI crosses zero
+
+  hdr/encode/64  200 rounds × 55 calls
+              mean ±mad µs  95% CI vs base    ops/s
+  ├─ native   59.9 ±7.7µs  [58.7–61.1]µs     68.3M
+  ╰─ scalar   60.5 ±7.3µs  [-0.9%–+1.4%]     67.6M [1]
+
+  native  ██████████████████████████████████████████████████████████ 68.3 Mops/s
+  scalar  █████████████████████████████████████████████████████████ 67.6 Mops/s
+  [1] CI crosses zero
+
+  ppm/decode/256  200 rounds × 33K calls
+              mean ±mad ns  95% CI vs base   ops/s
+  ├─ native   92.6 ±10.1ns  [90.7–94.4]ns    708G
+  ╰─ scalar    93.0 ±9.8ns  [-1.3%–+1.8%]    705G [1]
+
+  native  ███████████████████████████████████████████████████████████ 708 Gops/s
+  scalar  ███████████████████████████████████████████████████████████ 705 Gops/s
+  [1] CI crosses zero
+
+  ppm/encode/256  200 rounds × 408 calls
+             mean ±mad µs  95% CI vs base   ops/s
+  ├─ native   7.9 ±1.0µs  [7.6–8.2]µs      8.28G [1]
+  ╰─ scalar   7.9 ±1.0µs  [-1.7%–+1.5%]    8.25G [2] [3]
+
+  native  ██████████████████████████████████████████████████████████ 8.28 Gops/s
+  scalar  ██████████████████████████████████████████████████████████ 8.25 Gops/s
+  [1] CV=26%
+  [2] CI crosses zero
+  [3] CV=27%
+
+  farbfeld/decode/256  200 rounds × 54 calls
+              mean ±mad µs  95% CI vs base    ops/s
+  ├─ native   63.5 ±7.7µs  [62.1–64.8]µs     1.03G
+  ╰─ scalar   64.0 ±8.3µs  [-1.6%–+1.2%]     1.02G [1]
+
+  native  ██████████████████████████████████████████████████████████ 1.03 Gops/s
+  scalar  █████████████████████████████████████████████████████████ 1.02 Gops/s
+  [1] CI crosses zero
+
+  farbfeld/encode/256  200 rounds × 43 calls
+                mean ±mad µs  95% CI vs base      ops/s
+  ├─ native   213.3 ±22.7µs  [209.3–217.2]µs     307M
+  ╰─ scalar   215.1 ±30.5µs  [-1.4%–+3.1%]       305M [1]
+
+  native  ███████████████████████████████████████████████████████████ 307 Mops/s
+  scalar  ███████████████████████████████████████████████████████████ 305 Mops/s
+  [1] CI crosses zero
+
+  bmp/decode/256  30 rounds × 46 calls
+              mean ±mad µs  95% CI vs base       ops/s
+  ├─ native   25.0 ±4.3µs  [22.6–27.5]µs        2.62G [1]
+  ╰─ scalar   71.5 ±9.7µs  [+173.8%–+197.4%]     916M [2]
+
+  native  ██████████████████████████████████████████████████████████ 2.62 Gops/s
+  scalar  ████████████████████ 916 Mops/s
+  [1] CV=28%
+  [2] CV=21%
+
+  bmp/encode/256  200 rounds × 42 calls
+                mean ±mad µs  95% CI vs base      ops/s
+  ├─ native   221.5 ±21.2µs  [218.2–224.8]µs     296M
+  ╰─ scalar   223.5 ±25.3µs  [-1.4%–+3.1%]       293M [1]
+
+  native  ███████████████████████████████████████████████████████████ 296 Mops/s
+  scalar  ██████████████████████████████████████████████████████████ 293 Mops/s
+  [1] CI crosses zero
+
+  qoi/decode/256  200 rounds × 54 calls
+                mean ±mad µs  95% CI vs base      ops/s
+  ├─ native   169.6 ±19.4µs  [166.0–173.3]µs     386M
+  ╰─ scalar   169.4 ±22.4µs  [-1.4%–+3.3%]       387M [1]
+
+  scalar  ███████████████████████████████████████████████████████████ 387 Mops/s
+  native  ███████████████████████████████████████████████████████████ 386 Mops/s
+  [1] CI crosses zero
+
+  qoi/encode/256  200 rounds × 43 calls
+                mean ±mad µs  95% CI vs base      ops/s
+  ├─ native   214.8 ±26.0µs  [210.7–218.8]µs     305M
+  ╰─ scalar   215.9 ±26.0µs  [-1.7%–+2.7%]       304M [1]
+
+  native  ███████████████████████████████████████████████████████████ 305 Mops/s
+  scalar  ███████████████████████████████████████████████████████████ 304 Mops/s
+  [1] CI crosses zero
+
+  tga/decode/256  30 rounds × 41 calls
+              mean ±mad µs  95% CI vs base       ops/s
+  ├─ native   32.0 ±6.6µs  [29.4–34.6]µs        2.05G [1]
+  ╰─ scalar   81.6 ±8.2µs  [+142.6%–+167.7%]     803M
+
+  native  ██████████████████████████████████████████████████████████ 2.05 Gops/s
+  scalar  ███████████████████████ 803 Mops/s
+  [1] CV=23%
+
+  tga/encode/256  40 rounds × 51 calls
+              mean ±mad µs  95% CI vs base       ops/s
+  ├─ native   22.9 ±5.4µs  [20.9–24.9]µs        2.86G [1]
+  ╰─ scalar   68.5 ±9.8µs  [+185.7%–+211.5%]     957M [2]
+
+  native  ██████████████████████████████████████████████████████████ 2.86 Gops/s
+  scalar  ███████████████████ 957 Mops/s
+  [1] CV=28%
+  [2] CV=25%
+
+  hdr/decode/256  200 rounds × 44 calls
+                mean ±mad µs  95% CI vs base      ops/s
+  ├─ native   210.8 ±29.8µs  [206.1–215.4]µs     311M
+  ╰─ scalar   210.3 ±26.1µs  [-2.4%–+1.9%]       312M [1]
+
+  scalar  ███████████████████████████████████████████████████████████ 312 Mops/s
+  native  ███████████████████████████████████████████████████████████ 311 Mops/s
+  [1] CI crosses zero
+
+  hdr/encode/256  200 rounds × 18 calls
+                mean ±mad µs  95% CI vs base      ops/s
+  ├─ native   508.0 ±57.5µs  [497.7–518.3]µs     129M
+  ╰─ scalar   512.0 ±67.8µs  [-1.5%–+3.0%]       128M [1]
+
+  native  ███████████████████████████████████████████████████████████ 129 Mops/s
+  scalar  ███████████████████████████████████████████████████████████ 128 Mops/s
+  [1] CI crosses zero
+

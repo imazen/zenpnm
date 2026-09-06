@@ -1,0 +1,88 @@
+   Compiling enough v0.4.4
+   Compiling whereat v0.1.5
+   Compiling archmage v0.9.26
+   Compiling almost-enough v0.4.4
+   Compiling zenpixels v0.2.14
+   Compiling zenbitmaps v0.2.0 (/Users/lilith/work/zen/zenbitmaps)
+   Compiling zencodec v0.1.26
+   Compiling zencodec-testkit v0.1.0
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.58s
+     Running unittests src/lib.rs (target/debug/deps/zenbitmaps-93be6df5ac10e27f)
+
+running 1 test
+test bmp::encode::tests::rgb8_rows_match_pixelwise_bmp_with_padding ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 27 filtered out; finished in 0.02s
+
+     Running tests/bmp_rle_dos_regression.rs (target/debug/deps/bmp_rle_dos_regression-ea99c285896aed27)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/bmp_subbyte_stride.rs (target/debug/deps/bmp_subbyte_stride-41cedbeea26afc46)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/corpus.rs (target/debug/deps/corpus-686041f8f088d344)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 58 filtered out; finished in 0.00s
+
+     Running tests/default_pixel_cap.rs (target/debug/deps/default_pixel_cap-de2c6f4c9a7f0289)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/fixtures_conformance.rs (target/debug/deps/fixtures_conformance-1397e49aa0989756)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+     Running tests/fuzz_regression.rs (target/debug/deps/fuzz_regression-c3fd2912eacb8038)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/hdr_conformance.rs (target/debug/deps/hdr_conformance-d127428c15a65010)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/pnm_ascii_16bit_regression.rs (target/debug/deps/pnm_ascii_16bit_regression-f50094462af992f3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/rgb_imgref.rs (target/debug/deps/rgb_imgref-a08f4feef7173884)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/roundtrip.rs (target/debug/deps/roundtrip-dd0d39956cee1991)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 68 filtered out; finished in 0.00s
+
+     Running tests/tga_conformance.rs (target/debug/deps/tga_conformance-6c511c4acac580bc)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/truncation_series.rs (target/debug/deps/truncation_series-4ce5857167170824)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

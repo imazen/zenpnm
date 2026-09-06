@@ -1,0 +1,519 @@
+   Compiling archmage v0.9.26
+   Compiling magetypes v0.9.26
+   Compiling garb v0.2.8
+   Compiling linear-srgb v0.6.12
+   Compiling zenpixels-convert v0.2.13
+   Compiling zenbitmaps v0.2.0 (/Users/lilith/work/zen/zenbitmaps)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.01s
+     Running unittests src/lib.rs (target/debug/deps/zenbitmaps-54556992c58e7635)
+
+running 107 tests
+test alloc_util::tests::codec_default_keeps_site_default_false ... ok
+test alloc_util::tests::codec_default_keeps_site_default_true ... ok
+test alloc_util::tests::alloc_zeroed_all_modes_equal_bytes ... ok
+test alloc_util::tests::alloc_zeroed_fallible_oom_returns_err ... ok
+test alloc_util::tests::explicit_fallible_overrides_any_site_default ... ok
+test alloc_util::tests::explicit_infallible_overrides_any_site_default ... ok
+test alloc_util::tests::from_zencodec_alloc_preference_maps_each_mode ... ok
+test alloc_util::tests::vec_with_capacity_fallible_oom_returns_err ... ok
+test alloc_util::tests::vec_with_capacity_reserves_and_is_empty ... ok
+test bmp::tests::probe_dpi_300 ... ok
+test bmp::tests::probe_dpi_72 ... ok
+test bmp::tests::probe_color_table ... ok
+test bmp::tests::probe_dpi_asymmetric ... ok
+test bmp::tests::probe_dpi_zero ... ok
+test bmp::tests::probe_no_color_table_for_24bit ... ok
+test bmp::tests::roundtrip_encode_preserves_dpi ... ok
+test codec::tests::bmp_capabilities_include_native_gray ... ok
+test codec::tests::bmp_decode_descriptors_include_gray8 ... ok
+test codec::tests::capabilities_are_correct ... ok
+test codec::tests::decode_rgb_pixel_data ... ok
+test codec::tests::bmp_all_gray_rgb_not_narrowed_to_unencodable_gray ... ok
+test codec::tests::decoding_clone_send_sync ... ok
+test codec::tests::encode_bgra8_no_double_swizzle ... ok
+test codec::tests::encode_decode_gray8_roundtrip ... ok
+test codec::tests::encode_decode_gray_f32_roundtrip ... ok
+test codec::tests::encode_decode_rgb8_roundtrip ... ok
+test codec::tests::encode_decode_rgb_f32_roundtrip ... ok
+test codec::tests::encode_decode_rgba8_roundtrip ... ok
+test codec::tests::encoding_clone_send_sync ... ok
+test codec::tests::fallible_alloc_decode_matches_default_pnm ... ok
+test codec::tests::fallible_alloc_decode_matches_default_qoi ... ok
+test codec::tests::farbfeld_decode_has_alpha ... ok
+test codec::tests::farbfeld_probe_has_alpha ... ok
+test codec::tests::fidelity_is_always_lossless ... ok
+test codec::tests::four_layer_decode_flow ... ok
+test codec::tests::four_layer_encode_flow ... ok
+test codec::tests::hdr_animation_rejected ... ok
+test codec::tests::hdr_capabilities_correct ... ok
+test codec::tests::hdr_encode_decode_f32_roundtrip ... ok
+test codec::tests::hdr_format_is_hdr ... ok
+test codec::tests::hdr_probe_extracts_info ... ok
+test codec::tests::hdr_streaming_decode ... ok
+test codec::tests::hdr_streaming_encode_roundtrip ... ok
+test codec::tests::output_info_matches_decode ... ok
+test codec::tests::pnm_decode_descriptors_exclude_rgba16 ... ok
+test codec::tests::probe_extracts_info ... ok
+test codec::tests::qoi_all_gray_rgb_not_narrowed_to_unencodable_gray ... ok
+test codec::tests::qoi_animation_rejected ... ok
+test codec::tests::qoi_capabilities_correct ... ok
+test codec::tests::qoi_decode_descriptors ... ok
+test codec::tests::qoi_encode_decode_rgb8_roundtrip ... ok
+test codec::tests::qoi_encode_decode_rgba8_roundtrip ... ok
+test codec::tests::qoi_encode_descriptors ... ok
+test codec::tests::qoi_format_is_qoi ... ok
+test codec::tests::qoi_is_lossless ... ok
+test codec::tests::qoi_max_input_bytes_limit ... ok
+test codec::tests::qoi_output_info ... ok
+test codec::tests::qoi_probe_extracts_info ... ok
+test codec::tests::qoi_streaming_decode_1x1 ... ok
+test codec::tests::qoi_streaming_decode_rgb ... ok
+test codec::tests::qoi_streaming_decode_rgba ... ok
+test codec::tests::qoi_streaming_encode_finish_without_push_errors ... ok
+test codec::tests::qoi_streaming_encode_rgba_roundtrip ... ok
+test codec::tests::qoi_streaming_encode_roundtrip ... ok
+test codec::tests::qoi_streaming_encode_width_mismatch_error ... ok
+test codec::tests::qoi_with_limits_decode ... ok
+test codec::tests::qoi_with_limits_streaming ... ok
+test codec::tests::raw_encode_drops_dead_alpha_and_keeps_live_alpha ... ok
+test codec::tests::tga_animation_rejected ... ok
+test codec::tests::tga_capabilities_correct ... ok
+test codec::tests::tga_encode_decode_gray8_roundtrip ... ok
+test codec::tests::tga_encode_decode_rgb8_roundtrip ... ok
+test codec::tests::tga_probe_extracts_info ... ok
+test codec::tests::tga_streaming_decode ... ok
+test codec::tests::tga_streaming_encode_roundtrip ... ok
+test error::tests::bridge_into_codec_error_preserves_category_and_codec ... ok
+test error::tests::category_limit_exceeded_matches_every_real_site ... ok
+test error::tests::category_maps_each_variant ... ok
+test error::tests::category_through_at ... ok
+test error::tests::codec_name_is_zenbitmaps ... ok
+test error::tests::error_with_whereat ... ok
+test hdr::decode::tests::parse_header_minimal ... ok
+test hdr::decode::tests::parse_header_rgbe_magic ... ok
+test hdr::decode::tests::parse_resolution_bad ... ok
+test hdr::decode::tests::parse_resolution_standard ... ok
+test hdr::decode::tests::rgbe_to_f32_known_value ... ok
+test hdr::decode::tests::rgbe_to_f32_unit_range ... ok
+test hdr::decode::tests::rgbe_to_f32_zero_exponent ... ok
+test hdr::encode::tests::f32_to_rgbe_roundtrip_unit ... ok
+test hdr::encode::tests::f32_to_rgbe_tiny ... ok
+test hdr::encode::tests::f32_to_rgbe_zero ... ok
+test hdr::encode::tests::rle_encode_literals ... ok
+test hdr::encode::tests::rle_encode_run ... ok
+test limits::tests::default_pixel_cap_allows_under_120mp_with_no_limits ... ok
+test limits::tests::default_pixel_cap_rejects_over_120mp_with_no_limits ... ok
+test limits::tests::explicit_lower_pixel_cap_still_honored ... ok
+test limits::tests::explicit_unlimited_pixels_opts_out_of_default_cap ... ok
+test limits::tests::width_height_limits_unchanged_under_default ... ok
+test pnm::decode::tests::pfm_accepts_normal_scale ... ok
+test pnm::decode::tests::pfm_rejects_inf_scale ... ok
+test pnm::decode::tests::pfm_rejects_nan_scale ... ok
+test pnm::decode::tests::pfm_rejects_zero_scale ... ok
+test swizzle::tests::swap_rb_is_an_involution ... ok
+test codec::tests::with_limits_propagates ... ok
+test swizzle::tests::copy_converters_match_scalar_at_every_length ... ok
+test swizzle::tests::swap_rb_matches_scalar_at_every_length ... ok
+test bmp::encode::tests::rgb8_rows_match_pixelwise_bmp_with_padding ... ok
+
+test result: ok. 107 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/bmp_rle_dos_regression.rs (target/debug/deps/bmp_rle_dos_regression-dd184ac52f72c930)
+
+running 1 test
+test rle_decompression_bomb_rejected_fast ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/bmp_subbyte_stride.rs (target/debug/deps/bmp_subbyte_stride-e1ccbbc9a819ac23)
+
+running 1 test
+test one_bpp_unaligned_row_stride_decodes_correctly ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/corpus.rs (target/debug/deps/corpus-8ed805344e06f2a7)
+
+running 58 tests
+test bmp_corpus::invalid_no_panics ... ignored
+test bmp_corpus::invalid_standard ... ignored
+test bmp_corpus::invalid_strict ... ignored
+test bmp_corpus::non_conformant_permissive ... ignored
+test bmp_auto_detect_rgba ... ok
+test bmp_corpus::non_conformant_standard ... ignored
+test bmp_auto_detect ... ok
+test bmp_corpus::valid_permissive ... ignored
+test bmp_corpus::valid_standard ... ignored
+test bmp_corpus::valid_strict ... ignored
+test bmp_encode_from_bgra_roundtrip ... ok
+test bmp_encode_from_bgrx_roundtrip ... ok
+test bmp_fixtures::fixture_pal1 ... ok
+test bmp_fixtures::fixture_pal4 ... ok
+test bmp_fixtures::fixture_pal8 ... ok
+test bmp_fixtures::fixture_pal4rle ... ok
+test bmp_fixtures::fixture_pal8os2 ... ok
+test bmp_fixtures::fixture_pal8rle ... ok
+test bmp_fixtures::fixture_pal8topdown ... ok
+test bmp_fixtures::fixture_rgb24 ... ok
+test bmp_fixtures::fixture_rgb16 ... ok
+test bmp_fixtures::fixture_rgb32 ... ok
+test bmp_native_decode_bgr_roundtrip ... ok
+test bmp_fixtures::fixture_rgb16_565 ... ok
+test bmp_native_decode_bgra_roundtrip ... ok
+test bmp_odd_width_padding ... ok
+test bmp_width_1_padding ... ok
+test decode_external_bmp_if_available ... ok
+test bmp_fixtures::fixture_rgba32abf ... ok
+test decode_external_ppm_if_available ... ok
+test farbfeld_auto_detect ... ok
+test farbfeld_from_gray8 ... ok
+test farbfeld_from_rgb8 ... ok
+test farbfeld_limits_reject ... ok
+test farbfeld_rgba16_roundtrip ... ok
+test flat_bmp_rgba_roundtrip ... ok
+test flat_bmp_roundtrip ... ok
+test flat_pam_roundtrip_gray ... ok
+test flat_pam_roundtrip_rgb ... ok
+test flat_pam_roundtrip_rgba ... ok
+test flat_pfm_roundtrip_grayf32 ... ok
+test flat_pfm_roundtrip_rgbf32 ... ok
+test flat_pgm_roundtrip ... ok
+test flat_ppm_roundtrip ... ok
+test limits_max_height ... ok
+test limits_max_memory_bmp ... ok
+test limits_max_width ... ok
+test pgm_from_bgr_correct_luminance ... ok
+test pgm_from_bgra_correct_luminance ... ok
+test pgm_from_bgrx_correct_luminance ... ok
+test ppm_from_bgr_roundtrip_via_rgb ... ok
+test ppm_from_bgra_drops_alpha ... ok
+test single_pixel_bmp ... ok
+test single_pixel_pgm ... ok
+test single_pixel_ppm ... ok
+test tall_image_pgm ... ok
+test wide_image_ppm ... ok
+test bmp_fixtures::fixtures_auto_detect ... ok
+
+test result: ok. 50 passed; 0 failed; 8 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/default_pixel_cap.rs (target/debug/deps/default_pixel_cap-43154ba76357733a)
+
+running 8 tests
+test explicit_unlimited_opts_out_of_default_cap ... ok
+test default_path_rejects_over_120mp ... ok
+test explicit_lower_cap_overrides_default ... ok
+test default_path_does_not_apply_pixel_cap_under_120mp ... ok
+test farbfeld_over_cap_header_rejected_without_huge_alloc ... ok
+test pnm_ascii_over_cap_header_rejected_without_huge_alloc ... ok
+test pnm_binary_over_cap_header_rejected_without_huge_alloc ... ok
+test pnm_binary_truncated_under_cap_fails_on_eof_not_alloc ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/fixtures_conformance.rs (target/debug/deps/fixtures_conformance-1871bf4728d080f4)
+
+running 16 tests
+test bmp_fixtures_detected ... ok
+test fixture_bmp_rgba32 ... ok
+test all_pnm_fixtures_detected ... ok
+test fixture_farbfeld ... ok
+test fixture_bmp_rgb24 ... ok
+test fixture_hdr ... ok
+test fixture_p1_ascii_pbm ... ok
+test fixture_p2_ascii_pgm ... ok
+test fixture_p3_ascii_ppm ... ok
+test fixture_p4_binary_pbm ... ok
+test fixture_p6_binary_ppm ... ok
+test fixture_p5_binary_pgm ... ok
+test fixture_tga_gray8 ... ok
+test fixture_qoi ... ok
+test fixture_tga_rgb24 ... ok
+test fixture_tga_rgba32 ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/fuzz_regression.rs (target/debug/deps/fuzz_regression-639a4d9b411fa2b9)
+
+running 1 test
+test fuzz_regression ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/hdr_conformance.rs (target/debug/deps/hdr_conformance-7e1acda2e163c6a8)
+
+running 37 tests
+test encode_buffer_too_small ... ok
+test encode_rgb8_black ... ok
+test cancellation_decode_hdr ... ok
+test cancellation_encode_hdr ... ok
+test encode_rgb8_roundtrip ... ok
+test encode_unsupported_gray8 ... ok
+test encode_unsupported_rgba8 ... ok
+test flat_1x1 ... ok
+test flat_3x2 ... ok
+test flat_7x1 ... ok
+test header_bad_resolution_format ... ok
+test header_missing_resolution ... ok
+test header_non_numeric_dimensions ... ok
+test header_radiance_magic ... ok
+test header_rgbe_magic ... ok
+test header_with_extra_fields ... ok
+test header_wrong_magic ... ok
+test limits_max_height_hdr ... ok
+test limits_max_memory_hdr ... ok
+test limits_max_width_hdr ... ok
+test rgbe_black_pixel ... ok
+test rgbe_precision_hdr_values ... ok
+test rgbe_precision_low_values ... ok
+test rgbe_precision_unit_values ... ok
+test rle_all_literals ... ok
+test rle_all_runs ... ok
+test rle_literal_overflows_scanline ... ok
+test rle_mixed_runs_and_literals ... ok
+test rle_roundtrip_8x1 ... ok
+test rle_roundtrip_uniform_scanline ... ok
+test rle_roundtrip_multi_row ... ok
+test rle_roundtrip_varied_scanline ... ok
+test rle_run_overflows_scanline ... ok
+test rle_truncated_data ... ok
+test rle_width_mismatch ... ok
+test rle_zero_length_literal ... ok
+test rle_roundtrip_large ... ok
+
+test result: ok. 37 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/pnm_ascii_16bit_regression.rs (target/debug/deps/pnm_ascii_16bit_regression-3da7012ff2d33cd4)
+
+running 2 tests
+test ascii_pnm_16bit_no_oob_panic_51 ... ok
+test ascii_pnm_16bit_preserves_precision_51 ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/rgb_imgref.rs (target/debug/deps/rgb_imgref-d60b1ab8816c8d33)
+
+running 13 tests
+test decode_into_dimension_mismatch ... ok
+test as_imgref_layout_mismatch ... ok
+test as_imgref_zero_copy_pnm ... ok
+test as_imgref_owned_bmp ... ok
+test decode_into_layout_mismatch ... ok
+test decode_into_matching_dims ... ok
+test decode_output_as_pixels ... ok
+test decode_output_to_imgvec ... ok
+test imgvec_roundtrip ... ok
+test pam_rgba_pixels_roundtrip ... ok
+test ppm_pixels_roundtrip ... ok
+test strided_decode_into ... ok
+test strided_imgref_encode ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/roundtrip.rs (target/debug/deps/roundtrip-f617717fb847c744)
+
+running 124 tests
+test bmp_roundtrip_gray8_short_wide ... ok
+test bmp_roundtrip_gray8_tiny_odd ... ok
+test bmp_roundtrip_gray8_odd_width_tall ... ok
+test bmp_roundtrip_gray8_even_width ... ok
+test bmp_roundtrip_rgb8 ... ok
+test bmp_roundtrip_rgba8 ... ok
+test crafted_p3_oversized_dimensions_returns_error ... ok
+test decode_unrecognized_format ... ok
+test detect_format_bmp ... ok
+test detect_format_farbfeld ... ok
+test detect_format_hdr ... ok
+test detect_format_p1_p4 ... ok
+test detect_format_pnm ... ok
+test detect_format_qoi ... ok
+test detect_format_tga ... ok
+test detect_format_unknown ... ok
+test encode_color_arms_honor_in_loop_cancellation ... ok
+test encode_pam_gray16_cancellation_in_loop ... ok
+test encode_pam_gray16_writes_big_endian_on_disk ... ok
+test encode_pgm_luma_from_color_layouts ... ok
+test encode_pnm_buffer_too_small_errors ... ok
+test encode_pnm_unsupported_layouts_error ... ok
+test encode_ppm_from_non_rgb_layouts ... ok
+test farbfeld_encode_bgr8 ... ok
+test farbfeld_encode_bgra8 ... ok
+test gray16_ascii_source_pam_roundtrip_lossless ... ok
+test gray16_binary_truncated_errors ... ok
+test gray16_decode_cancellation_in_loop ... ok
+test gray16_edge_dimensions ... ok
+test gray16_nonmax_maxval_binary_ascii_agree ... ok
+test gray16_tall_crosses_stop_interval_and_roundtrips ... ok
+test hdr_1x1 ... ok
+test hdr_auto_detect_decode ... ok
+test hdr_decode_empty ... ok
+test hdr_cancellation ... ok
+test hdr_decode_truncated ... ok
+test hdr_encode_rgb8 ... ok
+test hdr_encode_unsupported_layout ... ok
+test hdr_limits_reject ... ok
+test hdr_roundtrip_rgbf32 ... ok
+test bmp_roundtrip_paletted8_odd_width ... ok
+test into_owned_works ... ok
+test limits_reject_large ... ok
+test hdr_wide_image ... ok
+test p1_ascii_pbm_1x1 ... ok
+test p1_ascii_pbm_2x2 ... ok
+test p1_ascii_pbm_with_comments ... ok
+test p1_invalid_char ... ok
+test p1_truncated ... ok
+test p2_ascii_pgm_3x2 ... ok
+test p2_ascii_pgm_maxval_scaling ... ok
+test p2_ascii_pgm_with_comments ... ok
+test p2_truncated ... ok
+test p2_zero_dimensions ... ok
+test p3_ascii_and_p6_binary_16bit_agree ... ok
+test p3_ascii_ppm_16bit_downscales_to_rgb8 ... ok
+test p3_ascii_ppm_2x1 ... ok
+test p3_ascii_ppm_maxval_scaling ... ok
+test p3_ascii_ppm_multiline ... ok
+test p3_truncated ... ok
+test p4_binary_pbm_16x1 ... ok
+test p4_binary_pbm_2x2 ... ok
+test p4_binary_pbm_3x1_padded ... ok
+test p4_binary_pbm_8x1 ... ok
+test p4_binary_pbm_all_black ... ok
+test p4_truncated ... ok
+test p5_binary_and_p2_ascii_gray16_agree ... ok
+test p5_binary_gray16_decodes_native_endian ... ok
+test p7_pam_binary_gray16_agrees_with_ascii ... ok
+test pam_16bit_rgb_and_rgba_downscale_to_8bit ... ok
+test pam_encode_bgr8 ... ok
+test pam_encode_bgra8 ... ok
+test pam_encode_bgrx8 ... ok
+test pam_header_validation_errors ... ok
+test pam_roundtrip_gray16_lossless ... ok
+test pam_roundtrip_rgba8 ... ok
+test pfm_big_endian_scale_applies_magnitude ... ok
+test pfm_roundtrip_grayf32_and_rgbf32 ... ok
+test pfm_truncated_pixel_data_errors ... ok
+test pgm_roundtrip_gray8 ... ok
+test ppm_roundtrip_rgb8 ... ok
+test qoi_1x1_rgb ... ok
+test qoi_1x1_rgba ... ok
+test qoi_auto_detect_decode ... ok
+test qoi_auto_detect_with_limits ... ok
+test qoi_decode_cancellation ... ok
+test qoi_decode_empty_input ... ok
+test qoi_decode_run_spans_rows_rgb ... ok
+test qoi_decode_run_to_edge_rgb_no_panic ... ok
+test qoi_decode_run_to_edge_rgba_no_panic ... ok
+test qoi_decode_truncated_header ... ok
+test qoi_decode_truncated_pixel_data ... ok
+test qoi_decode_wrong_magic ... ok
+test qoi_encode_bgr8 ... ok
+test qoi_encode_bgrx8 ... ok
+test qoi_encode_buffer_too_small ... ok
+test qoi_encode_cancellation ... ok
+test qoi_encode_unsupported_layout_gray8 ... ok
+test qoi_encode_unsupported_layout_grayf32 ... ok
+test qoi_encode_unsupported_layout_rgba16 ... ok
+test qoi_encode_unsupported_layout_rgbf32 ... ok
+test qoi_limits_max_height ... ok
+test qoi_large_enough_for_cancellation_check ... ok
+test qoi_limits_max_width ... ok
+test qoi_limits_max_memory ... ok
+test qoi_roundtrip_bgra8 ... ok
+test qoi_limits_reject ... ok
+test qoi_roundtrip_rgb8 ... ok
+test qoi_roundtrip_rgba8 ... ok
+test qoi_roundtrip_solid_run_heavy ... ok
+test qoi_tall_image ... ok
+test qoi_wide_image ... ok
+test tga_1x1 ... ok
+test tga_auto_detect_decode ... ok
+test tga_decode_empty ... ok
+test tga_decode_truncated ... ok
+test tga_encode_bgr8 ... ok
+test tga_encode_bgra8 ... ok
+test tga_encode_unsupported_layout ... ok
+test tga_roundtrip_gray8 ... ok
+test tga_roundtrip_rgb8 ... ok
+test tga_limits_reject ... ok
+test tga_roundtrip_rgba8 ... ok
+test hdr_1000x1000_roundtrip ... ok
+
+test result: ok. 124 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s
+
+     Running tests/tga_conformance.rs (target/debug/deps/tga_conformance-68205fac7e8b38a8)
+
+running 46 tests
+test colormapped_without_colormap ... ok
+test bottom_right_origin ... ok
+test cancellation_encode_tga ... ok
+test cancellation_decode_tga ... ok
+test invalid_color_map_type_2 ... ok
+test invalid_image_type_0 ... ok
+test invalid_image_type_4 ... ok
+test invalid_pixel_depth ... ok
+test limits_max_memory_tga ... ok
+test limits_max_width_tga ... ok
+test palette_index_out_of_range ... ok
+test right_to_left_origin ... ok
+test rle_packet_exceeds_bounds ... ok
+test rle_truncated_run_value ... ok
+test roundtrip_gray8_wide ... ok
+test roundtrip_rgb8_10x10 ... ok
+test truncated_pixel_data ... ok
+test type10_rle_32bit ... ok
+test type10_rle_max_run ... ok
+test type10_rle_mixed_packets ... ok
+test type10_rle_single_literal ... ok
+test type10_rle_single_run ... ok
+test type11_rle_gray ... ok
+test type11_rle_gray_mixed ... ok
+test type1_colormapped_16bit ... ok
+test type1_colormapped_24bit ... ok
+test type1_colormapped_32bit ... ok
+test type1_colormapped_with_offset ... ok
+test type2_15bit ... ok
+test roundtrip_rgba8_large ... ok
+test type2_16bit_555 ... ok
+test type2_16bit_blue ... ok
+test type2_16bit_green ... ok
+test type2_24bit_1x1 ... ok
+test type2_24bit_2x2_bottom_origin ... ok
+test type2_24bit_2x2_top_origin ... ok
+test type2_32bit_2x2 ... ok
+test type2_32bit_rgba ... ok
+test type3_gray_1x1 ... ok
+test type3_gray_3x2 ... ok
+test type3_gray_bottom_origin ... ok
+test type9_rle_colormapped ... ok
+test with_image_id ... ok
+test with_max_image_id ... ok
+test zero_height ... ok
+test zero_width ... ok
+
+test result: ok. 46 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/truncation_series.rs (target/debug/deps/truncation_series-646a6217499130b2)
+
+running 6 tests
+test pnm_truncation_series_categorizes_as_incomplete_input ... ok
+test farbfeld_truncation_series_categorizes_as_incomplete_input ... ok
+test hdr_truncation_series_categorizes_as_incomplete_input ... ok
+test bmp_truncation_series_categorizes_as_incomplete_input ... ok
+test qoi_truncation_series_categorizes_as_incomplete_input ... ok
+test tga_truncation_series_categorizes_as_incomplete_input ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests zenbitmaps
+
+running 7 tests
+test src/error.rs - error::Result (line 13) ... ok
+test src/lib.rs - (line 29) ... ok
+test src/lib.rs - (line 131) ... ok
+test src/lib.rs - (line 73) ... ignored
+test src/lib.rs - (line 10) ... ok
+test src/lib.rs - (line 54) ... ok
+test src/lib.rs - detect_format (line 279) ... ok
+
+test result: ok. 6 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+all doctests ran in 0.37s; merged doctests compilation took 0.15s

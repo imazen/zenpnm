@@ -48,6 +48,9 @@ jobs:
       - name: Test (bmp feature)
         run: cargo test --features bmp
 
+      - name: Test (all codec features and SIMD)
+        run: cargo test --all-features
+
   feature-perms:
     name: Feature permutations
     runs-on: ubuntu-latest
