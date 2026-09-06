@@ -232,7 +232,9 @@ pub(crate) fn layout_to_pixel_buffer(
         }
         PixelLayout::Gray16 => {
             let pixels: Vec<rgb::Gray<u16>> = bytes
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|c| rgb::Gray::new(u16::from_ne_bytes([c[0], c[1]])))
                 .collect();
             Ok(PixelBuffer::from_imgvec(imgref::ImgVec::new(pixels, w, h)).into())
@@ -247,7 +249,9 @@ pub(crate) fn layout_to_pixel_buffer(
         }
         PixelLayout::GrayF32 => {
             let pixels: Vec<rgb::Gray<f32>> = bytes
-                .chunks_exact(4)
+                .as_chunks::<4>()
+                .0
+                .iter()
                 .map(|c| rgb::Gray::new(f32::from_ne_bytes([c[0], c[1], c[2], c[3]])))
                 .collect();
             Ok(PixelBuffer::from_imgvec(imgref::ImgVec::new(pixels, w, h)).into())
@@ -255,7 +259,9 @@ pub(crate) fn layout_to_pixel_buffer(
         PixelLayout::RgbF32 => {
             // RgbF32 → promote to RgbaF32 (PFM has no alpha concept)
             let pixels: Vec<rgb::Rgba<f32>> = bytes
-                .chunks_exact(12)
+                .as_chunks::<12>()
+                .0
+                .iter()
                 .map(|c| {
                     let r = f32::from_ne_bytes([c[0], c[1], c[2], c[3]]);
                     let g = f32::from_ne_bytes([c[4], c[5], c[6], c[7]]);
@@ -268,7 +274,9 @@ pub(crate) fn layout_to_pixel_buffer(
         PixelLayout::Bgr8 => {
             // BGR → convert to RGB
             let pixels: Vec<rgb::Rgb<u8>> = bytes
-                .chunks_exact(3)
+                .as_chunks::<3>()
+                .0
+                .iter()
                 .map(|c| rgb::Rgb {
                     r: c[2],
                     g: c[1],
@@ -284,7 +292,9 @@ pub(crate) fn layout_to_pixel_buffer(
         PixelLayout::Bgrx8 => {
             // BGRX → convert to RGB (strip padding byte, swizzle BGR→RGB)
             let pixels: Vec<rgb::Rgb<u8>> = bytes
-                .chunks_exact(4)
+                .as_chunks::<4>()
+                .0
+                .iter()
                 .map(|c| rgb::Rgb {
                     r: c[2],
                     g: c[1],
@@ -295,7 +305,9 @@ pub(crate) fn layout_to_pixel_buffer(
         }
         PixelLayout::Rgba16 => {
             let pixels: Vec<rgb::Rgba<u16>> = bytes
-                .chunks_exact(8)
+                .as_chunks::<8>()
+                .0
+                .iter()
                 .map(|c| rgb::Rgba {
                     r: u16::from_ne_bytes([c[0], c[1]]),
                     g: u16::from_ne_bytes([c[2], c[3]]),
