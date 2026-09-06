@@ -1,0 +1,55 @@
+   Compiling zenbitmaps v0.2.0 (/Users/lilith/work/zen/zenbitmaps)
+    Finished `bench` profile [optimized] target(s) in 1.23s
+     Running benches/codecs.rs (target/release/deps/codecs-48ea24f1417bef0d)
+[zenbench] calibration: int=0.27ns/iter mem_bw=117.8GiB/s mem_lat=7.4ns
+[zenbench] timer resolution: 41ns, loop overhead: 0.22ns/iter, TSC: 1.000 ticks/ns (invariant)
+[zenbench] results → /Users/lilith/tmp/zenbench/zenbench-1788737932-5043.txt
+
+═══════════════════════════════════════════════════════════════
+  zenbench  1788737932-5043
+  git: 28e014237fabfed42c5a8857f2020299f3f701ab
+═══════════════════════════════════════════════════════════════
+
+  farbfeld/encode/64  200 rounds × 1K calls
+             mean ±mad µs  95% CI vs base   ops/s
+  ├─ native   2.4 ±0.3µs  [2.3–2.5]µs      1.74G [1]
+  ╰─ scalar   2.3 ±0.2µs  [-1.0%–+0.8%]    1.79G [2]
+
+  scalar  ██████████████████████████████████████████████████████████ 1.79 Gops/s
+  native  ████████████████████████████████████████████████████████ 1.74 Gops/s
+  [1] CV=42%
+  [2] CI crosses zero
+
+  farbfeld/encode/256  200 rounds × 98 calls
+              mean ±mad µs  95% CI vs base    ops/s
+  ├─ native   31.6 ±4.7µs  [30.8–32.4]µs     2.07G
+  ╰─ scalar   31.4 ±4.4µs  [-2.3%–+1.8%]     2.09G [1]
+
+  scalar  ██████████████████████████████████████████████████████████ 2.09 Gops/s
+  native  ██████████████████████████████████████████████████████████ 2.07 Gops/s
+  [1] CI crosses zero
+
+  farbfeld/encode/1024  200 rounds × 31 calls
+                mean ±mad µs  95% CI vs base      ops/s
+  ├─ native   294.9 ±38.8µs  [287.6–302.3]µs     3.56G
+  ╰─ scalar   299.7 ±39.3µs  [-2.4%–+1.9%]       3.50G [1] [2]
+
+  native  ██████████████████████████████████████████████████████████ 3.56 Gops/s
+  scalar  █████████████████████████████████████████████████████████ 3.50 Gops/s
+  [1] CI crosses zero
+  [2] CV=20%
+
+  farbfeld/encode/4096  200 rounds × 1 calls
+             mean ±mad ms  95% CI vs base   ops/s
+  ├─ native   7.1 ±0.9ms  [6.8–7.4]ms      2.37G [1]
+  ╰─ scalar   6.8 ±0.8ms  [-1.0%–+3.5%]    2.47G [2] [3]
+
+  scalar  ██████████████████████████████████████████████████████████ 2.47 Gops/s
+  native  ████████████████████████████████████████████████████████ 2.37 Gops/s
+  [1] CV=32%
+  [2] CI crosses zero
+  [3] CV=27%
+
+  total: 98.6s  (11 noisy rounds)
+═══════════════════════════════════════════════════════════════
+  filter: cargo bench -- --group=NAME  format: --format=llm|csv|md|json

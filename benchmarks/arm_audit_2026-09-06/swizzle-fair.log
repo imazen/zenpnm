@@ -1,0 +1,66 @@
+   Compiling zenbitmaps v0.2.0 (/Users/lilith/work/zen/zenbitmaps)
+    Finished `bench` profile [optimized] target(s) in 0.27s
+     Running benches/swizzle.rs (target/release/deps/swizzle-434011cebe722575)
+[zenbench] calibration: int=0.36ns/iter mem_bw=91.2GiB/s mem_lat=7.6ns
+[zenbench] timer resolution: 41ns, loop overhead: 0.38ns/iter, TSC: 1.000 ticks/ns (invariant)
+[zenbench] results → /Users/lilith/tmp/zenbench/zenbench-1788738032-50d0.txt
+
+═══════════════════════════════════════════════════════════════
+  zenbench  1788738032-50d0
+  git: 28e014237fabfed42c5a8857f2020299f3f701ab
+═══════════════════════════════════════════════════════════════
+
+  swap_rb/rgb24/640x480  30 rounds × 45 calls
+                     mean ±mad µs  95% CI vs base        iB/s
+  ├─ garb_simd       29.9 ±7.2µs  [27.3–32.6]µs        28.7G [1]
+  ╰─ scalar_loop   254.8 ±16.2µs  [+729.0%–+770.7%]    3.37G
+
+  garb_simd    ██████████████████████████████████████████████████████ 28.7 GiB/s
+  scalar_loop  ██████ 3.37 GiB/s
+  [1] CV=25%
+
+  swap_rb/rgba32/640x480  30 rounds × 45 calls
+                     mean ±mad µs  95% CI vs base        iB/s
+  ├─ garb_simd       43.5 ±9.5µs  [40.7–46.2]µs        26.3G
+  ╰─ scalar_loop   258.4 ±17.3µs  [+476.1%–+509.6%]    4.43G
+
+  garb_simd    ██████████████████████████████████████████████████████ 26.3 GiB/s
+  scalar_loop  █████████ 4.43 GiB/s
+
+  swap_rb/rgb24/1920x1080  30 rounds × 6 calls
+                      mean ±mad µs  95% CI vs base        iB/s
+  ├─ garb_simd      171.6 ±24.5µs  [162.6–180.7]µs      33.8G
+  ╰─ scalar_loop   1459.3 ±90.0µs  [+715.4%–+758.5%]    3.97G
+
+  garb_simd    ██████████████████████████████████████████████████████ 33.8 GiB/s
+  scalar_loop  ██████ 3.97 GiB/s
+
+  swap_rb/rgba32/1920x1080  30 rounds × 6 calls
+                       mean ±mad µs  95% CI vs base        iB/s
+  ├─ garb_simd       226.8 ±38.6µs  [213.1–240.9]µs      34.1G
+  ╰─ scalar_loop   1353.3 ±103.2µs  [+474.3%–+504.9%]    5.71G
+
+  garb_simd    ██████████████████████████████████████████████████████ 34.1 GiB/s
+  scalar_loop  █████████ 5.71 GiB/s
+
+  bgra_to_rgb/640x480  30 rounds × 11 calls
+               mean ±mad ms  95% CI vs base      iB/s
+  ├─ push_was   1.0 ±0.1ms  [0.9–1.1]ms         877M
+  ╰─ garb_now   0.1 ±0.0ms  [-92.4%–-87.0%]    8.48G [1]
+
+  garb_now  █████████████████████████████████████████████████████████ 8.48 GiB/s
+  push_was  ██████ 877 MiB/s
+  [1] CV=30%
+
+  bgra_to_rgb/1920x1080  30 rounds × 1 calls
+               mean ±mad ms  95% CI vs base      iB/s
+  ├─ push_was   7.0 ±0.5ms  [6.7–7.3]ms         845M
+  ╰─ garb_now   0.9 ±0.3ms  [-88.7%–-84.2%]    6.55G [1]
+
+  garb_now  █████████████████████████████████████████████████████████ 6.55 GiB/s
+  push_was  ███████ 845 MiB/s
+  [1] CV=30%
+
+  total: 27.2s
+═══════════════════════════════════════════════════════════════
+  filter: cargo bench -- --group=NAME  format: --format=llm|csv|md|json

@@ -50,3 +50,25 @@ and output growth out of the per-pixel loop; it benefits both runtime tiers.
 The new regression checks exact original BMP header/pixel/padding bytes for
 widths 1..65 and heights 1, 3 and 17. No public API or other layout path changed.
 [Full post-change log](bmp-after.log).
+
+
+## RGBA16 farbfeld encoding
+
+| Size | Baseline native | Fixed-output native |
+|---|---:|---:|
+| 64² | 32.5 us | 2.4 us |
+| 256² | 213.3 us | 31.6 us |
+| 1024² | 4.1 ms | 294.9 us |
+| 4096² | 31.0 ms | 7.1 ms |
+
+These are separate-build means. Both token states execute the same portable
+loop and their paired intervals cross zero. `rev16.16b` in generated assembly
+confirms vector byte swapping; see [assembly provenance](farbfeld-after.pointer.md).
+Output remains big-endian RGBA16. The new test covers every possible u16 word,
+plus odd rows; all-feature tests and strict all-target clippy pass.
+[Full results](zenbitmaps-farbfeld-after.log).
+
+The corrected allocation-inclusive BGRA-to-RGB comparison favors garb at both
+640×480 and 1920×1080. Existing in-place RGB/RGBA swaps also favor garb at both
+sizes. [Full fair-swizzle results](swizzle-fair.log). These do not imply every
+scalar loop is unvectorized; the comparison is with the retained loop shape.

@@ -54,14 +54,23 @@ pub(crate) fn encode_farbfeld(
 
     match layout {
         PixelLayout::Rgba16 => {
-            // Native endian u16 → big endian u16
-            for (row_idx, row) in pixels[..expected].chunks_exact(w * 8).enumerate() {
+            // Native endian u16 → big endian u16, with a fixed output extent.
+            out.resize(total, 0);
+            for (row_idx, (row, dst)) in pixels[..expected]
+                .chunks_exact(w * 8)
+                .zip(out[16..].chunks_exact_mut(w * 8))
+                .enumerate()
+            {
                 if row_idx % 16 == 0 {
                     stop.check().map_err(|r| at!(BitmapError::from(r)))?;
                 }
-                for pair in row.as_chunks::<2>().0.iter() {
-                    let val = u16::from_ne_bytes([pair[0], pair[1]]);
-                    out.extend_from_slice(&val.to_be_bytes());
+                for (&pair, output) in row
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .zip(dst.as_chunks_mut::<2>().0.iter_mut())
+                {
+                    *output = u16::from_ne_bytes(pair).to_be_bytes();
                 }
             }
         }
@@ -173,4 +182,32 @@ pub(crate) fn encode_farbfeld(
     }
 
     Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rgba16_preserves_every_word_in_big_endian_order() {
+        for (width, height) in [(64u32, 256u32), (31, 17), (1, 33)] {
+            let words = width as usize * height as usize * 4;
+            let pixels: Vec<u8> = (0..words).flat_map(|i| (i as u16).to_ne_bytes()).collect();
+            let actual = encode_farbfeld(
+                &pixels,
+                width,
+                height,
+                PixelLayout::Rgba16,
+                &enough::Unstoppable,
+            )
+            .unwrap();
+            let mut expected = b"farbfeld".to_vec();
+            expected.extend_from_slice(&width.to_be_bytes());
+            expected.extend_from_slice(&height.to_be_bytes());
+            for i in 0..words {
+                expected.extend_from_slice(&(i as u16).to_be_bytes());
+            }
+            assert_eq!(actual, expected, "{width}x{height}");
+        }
+    }
 }
