@@ -1,230 +1,131 @@
-//! Benchmarks for all zenbitmaps codecs.
-//!
-//! Run: `cargo bench --bench codecs --all-features`
-
+//! Paired native/scalar runtime tiers for all six bitmap codec families.
+//! Timings include allocation; setup and exact encoded/pixel checks are untimed.
 use enough::Unstoppable;
-use zenbench::{Throughput, black_box};
+use zenbench::prelude::*;
+use zenbitmaps::{DecodeOutput, PixelLayout, Result};
 
-const W: u32 = 1000;
-const H: u32 = 1000;
-
-fn make_rgb8() -> Vec<u8> {
-    (0..W * H)
-        .flat_map(|i| {
-            [
-                (i % 256) as u8,
-                ((i * 3) % 256) as u8,
-                ((i * 7) % 256) as u8,
-            ]
-        })
-        .collect()
+#[cfg(target_arch = "aarch64")]
+type TierToken = archmage::NeonToken;
+#[cfg(target_arch = "x86_64")]
+type TierToken = archmage::X64V3Token;
+fn set_simd(enabled: bool) {
+    #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
+    TierToken::dangerously_disable_token_process_wide(!enabled)
+        .expect("runtime tier must be toggleable");
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
+    panic!("native tier benchmark requires ARM or x86_64: {enabled}");
 }
-
-fn make_rgba16() -> Vec<u8> {
-    (0..W * H)
-        .flat_map(|i| {
-            let v = (i % 65536) as u16;
-            let mut p = [0u8; 8];
-            p[0..2].copy_from_slice(&v.to_ne_bytes());
-            p[2..4].copy_from_slice(&v.wrapping_mul(3).to_ne_bytes());
-            p[4..6].copy_from_slice(&v.wrapping_mul(7).to_ne_bytes());
-            p[6..8].copy_from_slice(&65535u16.to_ne_bytes());
-            p
-        })
-        .collect()
+fn encode(kind: usize, pixels: &[u8], side: u32, layout: PixelLayout) -> Vec<u8> {
+    match kind {
+        0 => zenbitmaps::encode_ppm(pixels, side, side, layout, Unstoppable),
+        1 => zenbitmaps::encode_farbfeld(pixels, side, side, layout, Unstoppable),
+        2 => zenbitmaps::encode_bmp(pixels, side, side, layout, Unstoppable),
+        3 => zenbitmaps::encode_qoi(pixels, side, side, layout, Unstoppable),
+        4 => zenbitmaps::encode_tga(pixels, side, side, layout, Unstoppable),
+        5 => zenbitmaps::encode_hdr(pixels, side, side, layout, Unstoppable),
+        _ => unreachable!(),
+    }
+    .unwrap()
 }
-
-fn make_rgbf32() -> Vec<u8> {
-    (0..W * H)
-        .flat_map(|i| {
-            let v = (i % 1000) as f32 / 1000.0;
-            let mut p = [0u8; 12];
-            p[0..4].copy_from_slice(&v.to_le_bytes());
-            p[4..8].copy_from_slice(&(v * 0.5).to_le_bytes());
-            p[8..12].copy_from_slice(&(v * 0.25).to_le_bytes());
-            p
-        })
-        .collect()
+fn decode(kind: usize, data: &[u8]) -> Result<DecodeOutput<'_>> {
+    match kind {
+        0 => zenbitmaps::decode(data, Unstoppable),
+        1 => zenbitmaps::decode_farbfeld(data, Unstoppable),
+        2 => zenbitmaps::decode_bmp(data, Unstoppable),
+        3 => zenbitmaps::decode_qoi(data, Unstoppable),
+        4 => zenbitmaps::decode_tga(data, Unstoppable),
+        5 => zenbitmaps::decode_hdr(data, Unstoppable),
+        _ => unreachable!(),
+    }
 }
-
 zenbench::main!(|suite| {
-    let _throughput = Throughput::Bytes(W as u64 * H as u64 * 3);
-
-    // ── Decode comparison ────────────────────────────────────────────
-    suite.compare("decode_1mpx", |g| {
-        g.throughput(Throughput::Bytes(W as u64 * H as u64 * 3));
-
-        let ppm = zenbitmaps::encode_ppm(
-            &make_rgb8(),
-            W,
-            H,
-            zenbitmaps::PixelLayout::Rgb8,
-            Unstoppable,
-        )
-        .unwrap();
-        g.bench("ppm", move |b| {
-            b.iter(|| {
-                let _ = black_box(zenbitmaps::decode(&ppm, Unstoppable).unwrap());
-            })
-        });
-
-        let ff = zenbitmaps::encode_farbfeld(
-            &make_rgba16(),
-            W,
-            H,
-            zenbitmaps::PixelLayout::Rgba16,
-            Unstoppable,
-        )
-        .unwrap();
-        g.bench("farbfeld", move |b| {
-            b.iter(|| {
-                let _ = black_box(zenbitmaps::decode_farbfeld(&ff, Unstoppable).unwrap());
-            })
-        });
-
-        let bmp = zenbitmaps::encode_bmp(
-            &make_rgb8(),
-            W,
-            H,
-            zenbitmaps::PixelLayout::Rgb8,
-            Unstoppable,
-        )
-        .unwrap();
-        g.bench("bmp", move |b| {
-            b.iter(|| {
-                let _ = black_box(zenbitmaps::decode_bmp(&bmp, Unstoppable).unwrap());
-            })
-        });
-
-        #[cfg(feature = "qoi")]
-        {
-            let qoi = zenbitmaps::encode_qoi(
-                &make_rgb8(),
-                W,
-                H,
-                zenbitmaps::PixelLayout::Rgb8,
-                Unstoppable,
-            )
-            .unwrap();
-            g.bench("qoi", move |b| {
-                b.iter(|| {
-                    let _ = black_box(zenbitmaps::decode_qoi(&qoi, Unstoppable).unwrap());
+    const { assert!(cfg!(feature = "simd"), "enable the simd feature") };
+    for side in [64u32, 256, 1024, 4096] {
+        let count = side as usize * side as usize;
+        let rgb: &'static [u8] = Box::leak(
+            (0..count)
+                .flat_map(|i| {
+                    [
+                        (i ^ (i / side as usize)) as u8,
+                        (i * 3) as u8,
+                        (i * 7) as u8,
+                    ]
                 })
-            });
-        }
-
-        let tga = zenbitmaps::encode_tga(
-            &make_rgb8(),
-            W,
-            H,
-            zenbitmaps::PixelLayout::Rgb8,
-            Unstoppable,
-        )
-        .unwrap();
-        g.bench("tga", move |b| {
-            b.iter(|| {
-                let _ = black_box(zenbitmaps::decode_tga(&tga, Unstoppable).unwrap());
-            })
-        });
-
-        let hdr = zenbitmaps::encode_hdr(
-            &make_rgbf32(),
-            W,
-            H,
-            zenbitmaps::PixelLayout::RgbF32,
-            Unstoppable,
-        )
-        .unwrap();
-        g.bench("hdr", move |b| {
-            b.iter(|| {
-                let _ = black_box(zenbitmaps::decode_hdr(&hdr, Unstoppable).unwrap());
-            })
-        });
-    });
-
-    // ── Encode comparison ────────────────────────────────────────────
-    suite.compare("encode_1mpx", |g| {
-        g.throughput(Throughput::Bytes(W as u64 * H as u64 * 3));
-
-        let px = make_rgb8();
-        g.bench("ppm", move |b| {
-            b.iter(|| {
-                black_box(
-                    zenbitmaps::encode_ppm(&px, W, H, zenbitmaps::PixelLayout::Rgb8, Unstoppable)
-                        .unwrap(),
-                )
-            })
-        });
-
-        let px16 = make_rgba16();
-        g.bench("farbfeld", move |b| {
-            b.iter(|| {
-                black_box(
-                    zenbitmaps::encode_farbfeld(
-                        &px16,
-                        W,
-                        H,
-                        zenbitmaps::PixelLayout::Rgba16,
-                        Unstoppable,
-                    )
-                    .unwrap(),
-                )
-            })
-        });
-
-        let px = make_rgb8();
-        g.bench("bmp", move |b| {
-            b.iter(|| {
-                black_box(
-                    zenbitmaps::encode_bmp(&px, W, H, zenbitmaps::PixelLayout::Rgb8, Unstoppable)
-                        .unwrap(),
-                )
-            })
-        });
-
-        #[cfg(feature = "qoi")]
-        {
-            let px = make_rgb8();
-            g.bench("qoi", move |b| {
-                b.iter(|| {
-                    black_box(
-                        zenbitmaps::encode_qoi(
-                            &px,
-                            W,
-                            H,
-                            zenbitmaps::PixelLayout::Rgb8,
-                            Unstoppable,
-                        )
-                        .unwrap(),
-                    )
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        );
+        let rgba16: &'static [u8] = Box::leak(
+            (0..count)
+                .flat_map(|i| {
+                    [i as u16, (i * 3) as u16, (i * 7) as u16, u16::MAX]
+                        .map(u16::to_ne_bytes)
+                        .into_iter()
+                        .flatten()
                 })
-            });
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        );
+        let rgbf: &'static [u8] = Box::leak(
+            (0..count)
+                .flat_map(|i| {
+                    let v = (i % 997) as f32 / 997.0;
+                    [v, v * 0.5, v * 0.25]
+                        .map(f32::to_ne_bytes)
+                        .into_iter()
+                        .flatten()
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        );
+        for (kind, name) in ["ppm", "farbfeld", "bmp", "qoi", "tga", "hdr"]
+            .into_iter()
+            .enumerate()
+        {
+            let (pixels, layout) = match kind {
+                1 => (rgba16, PixelLayout::Rgba16),
+                5 => (rgbf, PixelLayout::RgbF32),
+                _ => (rgb, PixelLayout::Rgb8),
+            };
+            set_simd(false);
+            let scalar = encode(kind, pixels, side, layout);
+            set_simd(true);
+            let native = encode(kind, pixels, side, layout);
+            assert_eq!(scalar, native, "{name}/{side} encoded bytes");
+            let encoded: &'static [u8] = Box::leak(native.into_boxed_slice());
+            set_simd(false);
+            let scalar = decode(kind, encoded).unwrap();
+            set_simd(true);
+            let native = decode(kind, encoded).unwrap();
+            assert_eq!(
+                (scalar.width, scalar.height, scalar.layout),
+                (native.width, native.height, native.layout)
+            );
+            assert_eq!(native.width, side);
+            assert_eq!(native.height, side);
+            assert_eq!(scalar.pixels(), native.pixels(), "{name}/{side} pixels");
+            for decoding in [true, false] {
+                suite.compare(
+                    format!(
+                        "{name}/{}/{side}",
+                        if decoding { "decode" } else { "encode" }
+                    ),
+                    move |g| {
+                        g.throughput(Throughput::Elements(count as u64));
+                        for (arm, enabled) in [("native", true), ("scalar", false)] {
+                            g.bench(arm, move |b| {
+                                b.with_input(move || set_simd(enabled)).run(move |_| {
+                                    if decoding {
+                                        black_box(decode(kind, encoded).unwrap());
+                                    } else {
+                                        black_box(encode(kind, pixels, side, layout));
+                                    }
+                                })
+                            });
+                        }
+                    },
+                );
+            }
         }
-
-        let px = make_rgb8();
-        g.bench("tga", move |b| {
-            b.iter(|| {
-                black_box(
-                    zenbitmaps::encode_tga(&px, W, H, zenbitmaps::PixelLayout::Rgb8, Unstoppable)
-                        .unwrap(),
-                )
-            })
-        });
-
-        let pxf = make_rgbf32();
-        g.bench("hdr", move |b| {
-            b.iter(|| {
-                black_box(
-                    zenbitmaps::encode_hdr(
-                        &pxf,
-                        W,
-                        H,
-                        zenbitmaps::PixelLayout::RgbF32,
-                        Unstoppable,
-                    )
-                    .unwrap(),
-                )
-            })
-        });
-    });
+    }
+    set_simd(true);
 });

@@ -49,3 +49,7 @@ test-armv7:
     cross test --all-features --target armv7-unknown-linux-gnueabihf
 
 test-cross: test-i686 test-armv7
+
+# Six format families, exact encoded bytes and pixels across runtime tiers.
+arm-codec-audit:
+    CARGO_BUILD_JOBS=4 RAYON_NUM_THREADS=4 OMP_NUM_THREADS=4 TMPDIR="$HOME/tmp" nice -n 19 cargo bench --bench codecs --features all
